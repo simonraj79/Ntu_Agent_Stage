@@ -7,7 +7,7 @@ from openai import OpenAI, OpenAIError
 import traceback
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
-from app.forms import AgentForm
+from app.forms import AgentForm, DeleteAgentForm
 
 bp = Blueprint('agents', __name__)
 
@@ -156,7 +156,25 @@ def edit_agent(agent_id):
         flash('Agent updated successfully.')
         return redirect(url_for('agents.agent_directory'))
     
-    return render_template('edit_agent.html', form=form, agent=agent)
+    return render_template('edit_agent.html', form=form, agent=agent, delete_form=DeleteAgentForm())
+
+@bp.route('/delete-agent/<int:agent_id>', methods=['POST'])
+@login_required
+def delete_agent(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id:
+        flash('You do not have permission to delete this agent.')
+        return redirect(url_for('agents.agent_directory'))
+
+    form = DeleteAgentForm()
+    if form.validate_on_submit():
+        db.session.delete(agent)
+        db.session.commit()
+        flash('Agent deleted successfully.')
+        return redirect(url_for('agents.agent_directory'))
+
+    flash('Invalid request.')
+    return redirect(url_for('agents.edit_agent', agent_id=agent_id))
 
 @bp.route('/conversation/<int:conversation_id>')
 @login_required

@@ -94,4 +94,6 @@ form {
     form {
         padding: 20px;
     }
+}.delete-agent-form {
+    margin-top: 20px;
 }

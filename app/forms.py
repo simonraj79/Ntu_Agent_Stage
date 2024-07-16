@@ -28,3 +28,5 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Role', choices=[('student', 'Student'), ('faculty', 'Faculty')], validators=[DataRequired()])
     submit = SubmitField('Register')
+class DeleteAgentForm(FlaskForm):
+    submit = SubmitField('Delete Agent')
