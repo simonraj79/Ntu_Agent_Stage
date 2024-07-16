@@ -1,7 +1,7 @@
 # app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, SelectField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, Email, EqualTo
+from wtforms import StringField, TextAreaField, BooleanField, SelectField, PasswordField, SubmitField, DecimalField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, NumberRange
 from app.models import AgentCategory
 
 class AgentForm(FlaskForm):
