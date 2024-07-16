@@ -8,6 +8,9 @@
 
 {% block content %}
 <div class="container">
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="NTUAgent Logo" class="logo">
+    </div>
     <div class="card">
         <h2>Register</h2>
         <form method="POST">

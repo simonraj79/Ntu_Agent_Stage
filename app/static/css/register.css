@@ -101,4 +101,13 @@ a:hover {
     .card {
         margin: 0 20px;
     }
+}.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo {
+    max-width: 200px;
+    height: auto;
 }
