@@ -11,6 +11,8 @@ NTUAgent is a web application that allows faculty members at NTU to create custo
 - Flask-Login (User Authentication)
 - HTML/CSS/JavaScript (Frontend)
 - OpenAI API (AI Agent Responses)
+- Marked.js (Markdown Rendering)
+- DOMPurify (HTML Sanitization)
 
 ## Application Structure
 
@@ -83,12 +85,14 @@ The application follows a modular structure with the following main components:
 The NTUAgent application follows these main steps:
 
 1. Faculty members register and log in to the platform.
-2. Faculty members create AI agents by providing a name, description, and selecting a category.
+2. Faculty members create AI agents by providing a name, description, system prompt, category, and other settings.
 3. Users interact with the agents through a chat interface.
-4. User messages are sent to the OpenAI API to generate agent responses.
+4. User messages are sent to the OpenAI API, along with the conversation history and agent's system prompt, to generate agent responses.
 5. The chat history and agent details are stored in the database.
-6. Faculty members can view and manage their created agents.
-7. Students can browse and interact with public agents.
+6. Faculty members can view and manage their created agents, including editing and deleting them.
+7. Faculty members can view conversation history for their agents and generate insights.
+8. Students can browse and interact with public agents.
+9. The application handles token count limits and streams responses from the OpenAI API for a seamless user experience.
 
 ## Contributing
 
