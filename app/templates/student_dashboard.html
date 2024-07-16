@@ -1,0 +1,45 @@
+<!-- app/templates/student_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - NTUAgent{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="dashboard-title">Student Dashboard</h2>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card agents-card">
+            <h3>Available Agents</h3>
+            <div class="agent-grid">
+                {% for agent in available_agents %}
+                <div class="agent-item">
+                    <h4>{{ agent.name }}</h4>
+                    <p class="agent-description">{{ agent.description }}</p>
+                    <p class="agent-category">Category: {{ agent.category.name if agent.category else 'Uncategorized' }}</p>
+                    <div class="agent-actions">
+                        <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary">Chat</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="dashboard-card recent-chats-card">
+            <h3>Recent Chats</h3>
+            <ul class="recent-chats-list">
+                {% for conversation in recent_conversations %}
+                <li>
+                    <span class="agent-name">{{ conversation.agent.name }}</span>
+                    <span class="conversation-preview">{{ get_conversation_preview(conversation.id) }}</span>
+                    <a href="{{ url_for('agents.chat', agent_id=conversation.agent.id) }}" class="btn btn-secondary">Continue Chat</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

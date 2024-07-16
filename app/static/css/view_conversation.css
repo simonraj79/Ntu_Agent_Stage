@@ -1,0 +1,117 @@
+:root {
+    --ntu-midnight-blue: #191970;
+    --ntu-crimson-red: #8A0303;
+    --background-color: #f0f2f5;
+    --text-color: #333;
+    --card-background: #fff;
+    --font-family: 'Poppins', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2, h3 {
+    color: var(--ntu-midnight-blue);
+}
+
+.card {
+    background-color: var(--card-background);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-title {
+    color: var(--ntu-crimson-red);
+    border-bottom: 2px solid var(--ntu-midnight-blue);
+    padding-bottom: 10px;
+}
+
+.conversation-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.conversation-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.conversation-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.conversation-table .speaker {
+    width: 100px;
+    font-weight: bold;
+    color: var(--ntu-midnight-blue);
+}
+
+.conversation-table .message {
+    word-break: break-word;
+}
+
+.table-primary {
+    background-color: #e6f2ff;
+}
+
+.table-secondary {
+    background-color: #f2f2f2;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+    font-family: var(--font-family);
+}
+
+.btn-primary {
+    background-color: var(--ntu-midnight-blue);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--ntu-crimson-red);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+#insights-content {
+    margin-bottom: 15px;
+}
+
+#insights-content p {
+    margin-bottom: 5px;
+}
+
+@media (max-width: 768px) {
+    .conversation-container {
+        max-height: 400px;
+    }
+
+    .conversation-table .speaker {
+        width: 80px;
+    }
+}

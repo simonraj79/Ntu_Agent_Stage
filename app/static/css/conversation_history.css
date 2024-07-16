@@ -1,0 +1,136 @@
+:root {
+    --ntu-midnight-blue: #191970;
+    --ntu-crimson-red: #8A0303;
+    --background-color: #f0f2f5;
+    --text-color: #333;
+    --card-background: #fff;
+    --font-family: 'Poppins', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.conversation-history-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2 {
+    color: var(--ntu-midnight-blue);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.filter-form {
+    background-color: var(--card-background);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.filter-form div {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--ntu-midnight-blue);
+}
+
+.filter-form select,
+.filter-form input[type="date"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: var(--font-family);
+}
+
+.conversation-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--card-background);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.conversation-table th,
+.conversation-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.conversation-table th {
+    background-color: var(--ntu-midnight-blue);
+    color: white;
+}
+
+.conversation-table tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+    font-family: var(--font-family);
+}
+
+.btn-primary {
+    background-color: var(--ntu-midnight-blue);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--ntu-crimson-red);
+    color: white;
+}
+
+.btn-outline-primary {
+    border: 1px solid var(--ntu-midnight-blue);
+    color: var(--ntu-midnight-blue);
+    background-color: transparent;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination .btn {
+    margin: 0 5px;
+}
+
+@media (max-width: 768px) {
+    .filter-form {
+        flex-direction: column;
+    }
+
+    .filter-form div {
+        width: 100%;
+    }
+
+    .conversation-table {
+        font-size: 14px;
+    }
+}

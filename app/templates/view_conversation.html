@@ -1,0 +1,54 @@
+<!-- app/templates/view_conversation.html -->
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/view_conversation.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Conversation with {{ conversation.agent.name }}</h2>
+    <p><strong>Started on:</strong> {{ conversation.created_at.strftime('%b %d, %Y, %I:%M %p') }}</p>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">Conversation</h3>
+            <div class="conversation-container">
+                <table class="conversation-table">
+                    <tbody>
+                        {% for log in chat_logs %}
+                        <tr class="table-primary">
+                            <td class="speaker">You</td>
+                            <td class="message">{{ log.user_message }}</td>
+                        </tr>
+                        <tr class="table-secondary">
+                            <td class="speaker">{{ conversation.agent.name }}</td>
+                            <td class="message">{{ log.ai_response }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">Conversation Insights</h3>
+            <div id="insights-content">
+                <p><strong>Topics:</strong> <span id="insights-topics">No specific topics identified</span></p>
+                <p><strong>Sentiment:</strong> <span id="insights-sentiment">0.0</span></p>
+                <p><strong>Summary:</strong> <span id="insights-summary">No summary available.</span></p>
+            </div>
+            <button id="generate-insights-btn" class="btn btn-primary" data-insights-url="{{ url_for('agents.generate_insights', conversation_id=conversation.id) }}">Generate Insights</button>
+        </div>
+    </div>
+
+    <a href="{{ url_for('agents.conversation_history') }}" class="btn btn-secondary">Back to Conversation History</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/insights.js') }}"></script>
+{% endblock %}

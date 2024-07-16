@@ -1,0 +1,102 @@
+<!-- app/templates/conversation_history.html -->
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/conversation_history.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="conversation-history-container">
+    <h2>Conversation History</h2>
+
+    <form method="GET" action="{{ url_for('agents.conversation_history') }}" class="filter-form">
+        <div>
+            <label for="agent">Agent:</label>
+            <select name="agent" id="agent">
+                <option value="">All Agents</option>
+                {% for agent in agents %}
+                    <option value="{{ agent.id }}" {% if request.args.get('agent')|int == agent.id %}selected{% endif %}>
+                        {{ agent.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        </div>
+        <div>
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    {% if conversations.items %}
+        <table class="conversation-table">
+            <thead>
+                <tr>
+                    <th>Agent Name</th>
+                    <th>Preview</th>
+                    <th>Conversation ID</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conversation in conversations.items %}
+                <tr>
+                    <td>{{ conversation.agent.name }}</td>
+                    <td>{{ get_conversation_preview(conversation.id) }}</td>
+                    <td>{{ conversation.id }}</td>
+                    <td>{{ conversation.created_at.strftime('%b %d, %Y, %I:%M %p') }}</td>
+                    <td>
+                        <a href="{{ url_for('agents.view_conversation', conversation_id=conversation.id) }}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if conversations.has_prev or conversations.has_next %}
+        <div class="pagination">
+            {% if conversations.has_prev %}
+                {% set prev_args = request.args.copy() %}
+                {{ prev_args.update({'page': conversations.prev_num}) or '' }}
+                <a href="{{ url_for('agents.conversation_history', **prev_args) }}" class="btn btn-outline-primary">&laquo; Previous</a>
+            {% endif %}
+            {% if conversations.has_next %}
+                {% set next_args = request.args.copy() %}
+                {{ next_args.update({'page': conversations.next_num}) or '' }}
+                <a href="{{ url_for('agents.conversation_history', **next_args) }}" class="btn btn-outline-primary">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <p>You haven't had any conversations with your agents yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary mt-3">Back to Agent Directory</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterForm = document.querySelector('.filter-form');
+        const agentSelect = document.getElementById('agent');
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+
+        filterForm.addEventListener('submit', function(event) {
+            if (agentSelect.value === '' && startDateInput.value === '' && endDateInput.value === '') {
+                event.preventDefault();
+                window.location.href = "{{ url_for('agents.conversation_history') }}";
+            }
+        });
+    });
+</script>
+{% endblock %}

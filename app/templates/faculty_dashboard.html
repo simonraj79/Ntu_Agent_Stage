@@ -1,0 +1,49 @@
+<!-- app/templates/faculty_dashboard.html -->
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/faculty_dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="dashboard-title">Faculty Dashboard</h2>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card overview-card">
+            <h3>Overview</h3>
+            <div class="stat-container">
+                <div class="stat-item">
+                    <span class="stat-value">{{ total_agents }}</span>
+                    <span class="stat-label">Total Agents</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ total_conversations }}</span>
+                    <span class="stat-label">Total Conversations</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card activity-card">
+            <h3>Recent Conversations</h3>
+            <ul class="activity-list">
+                {% for conversation in recent_conversations %}
+                <li>
+                    <span class="agent-name">{{ conversation.agent.name }}</span>
+                    <span class="conversation-time">{{ conversation.updated_at.strftime('%b %d, %Y, %I:%M %p') }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ url_for('agents.conversation_history') }}" class="btn btn-secondary">View All Conversations</a>
+        </div>
+
+        <div class="dashboard-card actions-card">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+                <a href="{{ url_for('agents.create_agent') }}" class="btn btn-primary">Create New Agent</a>
+                <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary">View Agent Directory</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
