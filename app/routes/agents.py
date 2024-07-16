@@ -113,12 +113,16 @@ def chat(agent_id):
 @bp.route('/conversation-history')
 @login_required
 def conversation_history():
+    if not current_user.is_faculty:
+        flash('You do not have permission to view conversation history.')
+        return redirect(url_for('main.index'))
+
     page = request.args.get('page', 1, type=int)
     agent_id = request.args.get('agent')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    query = Conversation.query.filter_by(user_id=current_user.id)
+    query = Conversation.query.join(Agent).filter(Agent.creator_id == current_user.id)
 
     if agent_id:
         query = query.filter_by(agent_id=int(agent_id))
@@ -182,7 +186,7 @@ def delete_agent(agent_id):
 @login_required
 def view_conversation(conversation_id):
     conversation = Conversation.query.get_or_404(conversation_id)
-    if conversation.user_id != current_user.id and not current_user.is_faculty:
+    if conversation.agent.creator_id != current_user.id:
         flash('You do not have permission to view this conversation.')
         return redirect(url_for('agents.conversation_history'))
     
