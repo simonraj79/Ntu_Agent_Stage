@@ -77,11 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const textElement = document.createElement('div');
         textElement.classList.add('message-text');
-        if (sender === 'user') {
-            textElement.textContent = message;
-        } else {
-            textElement.innerHTML = DOMPurify.sanitize(marked.parse(message));
-        }
+        textElement.innerHTML = DOMPurify.sanitize(marked.parse(message));
         
         if (sender === 'user') {
             messageElement.appendChild(textElement);

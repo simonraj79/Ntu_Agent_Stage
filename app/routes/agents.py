@@ -4,6 +4,7 @@ from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, 
 from app import db
 from config import Config
 from openai import OpenAI, OpenAIError
+from tiktoken import encoding_for_model
 import traceback
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
@@ -78,10 +79,25 @@ def chat(agent_id):
             db.session.commit()
 
             def generate_response():
-                messages = [
-                    {"role": "system", "content": agent.system_prompt},
-                    {"role": "user", "content": user_message}
-                ]
+                conversation = Conversation.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
+                if not conversation or (datetime.utcnow() - conversation.updated_at) > timedelta(hours=1):
+                    conversation = Conversation(agent_id=agent.id, user_id=current_user.id)
+                    db.session.add(conversation)
+                    db.session.commit()
+
+                chat_logs = ChatLog.query.filter_by(conversation_id=conversation.id).order_by(ChatLog.timestamp).all()
+                messages = [{"role": "system", "content": agent.system_prompt}]
+                for log in chat_logs:
+                    messages.append({"role": "user", "content": log.user_message})
+                    messages.append({"role": "assistant", "content": log.ai_response})
+                messages.append({"role": "user", "content": user_message})
+
+                encoding = encoding_for_model("gpt-3.5-turbo")
+                num_tokens = len(encoding.encode(" ".join(msg["content"] for msg in messages)))
+                while num_tokens > 16384:
+                    messages.pop(1)  # Remove the oldest user message
+                    messages.pop(1)  # Remove the corresponding assistant response
+                    num_tokens = len(encoding.encode(" ".join(msg["content"] for msg in messages)))
                 try:
                     print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
                     print("Sending request to OpenAI API...")

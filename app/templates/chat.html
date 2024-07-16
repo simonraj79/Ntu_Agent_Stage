@@ -16,7 +16,18 @@
     <div class="chat-header">
         <h1>Chat with {{ agent.name }}</h1>
     </div>
-    <div id="chat-messages" class="chat-messages"></div>
+    <div id="chat-messages" class="chat-messages">
+        {% for log in chat_logs %}
+        <div class="message user">
+            <div class="message-text">{{ log.user_message }}</div>
+            <div class="avatar">U</div>
+        </div>
+        <div class="message ai">
+            <div class="avatar">A</div>
+            <div class="message-text">{{ log.ai_response }}</div>
+        </div>
+        {% endfor %}
+    </div>
     <div class="chat-input-container">
         <form id="chat-form" data-chat-url="{{ url_for('agents.chat', agent_id=agent.id) }}">
             <input type="text" id="message-input" placeholder="Type your message..." required>
