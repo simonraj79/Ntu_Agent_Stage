@@ -1,34 +1,93 @@
 # NTUAgent
 
-## NTUAgent Platform Overview
+NTUAgent is a web application that allows faculty members at NTU to create custom AI agents for educational and administrative purposes. The platform provides a user-friendly interface for creating, managing, and interacting with these agents through a chat interface.
 
-**Problem:** The current challenge at NTU is the lack of a unified platform for faculty members to create custom chatbots for educational and administrative purposes. This situation leads to inefficiencies and inconsistent support for students and staff.
+## Technologies Used
 
-**Solution:** The NTUAgent Platform addresses this issue by allowing faculty members to create custom AI agents. These agents can assist with a variety of educational and administrative tasks. Users can interact with these agents through a chat interface, receiving tailored responses based on predefined system prompts.
+- Python
+- Flask (Web Framework)
+- SQLAlchemy (Database ORM)
+- Flask-WTF (Form Handling)
+- Flask-Login (User Authentication)
+- HTML/CSS/JavaScript (Frontend)
+- OpenAI API (AI Agent Responses)
 
-**Purpose:** The primary aim of the NTUAgent Platform is to enhance productivity and support personalized learning and administrative processes. By leveraging AI technology, the platform provides users with immediate, customized assistance, improving the overall experience for both faculty and students.
+## Application Structure
 
-## Features
+The application follows a modular structure with the following main components:
 
-- **Agent Creation:** Faculty members can easily create and configure AI agents tailored to specific tasks or areas of expertise.
-- **Chat Interface:** A user-friendly chat interface allows for seamless interaction between users and agents.
-- **Customizable Responses:** Agents can be programmed with predefined system prompts to provide tailored responses to user inquiries.
-- **Category Management:** Agents can be categorized based on their area of expertise, making it easier for users to find the right agent for their needs.
-- **Privacy Controls:** Users have the option to make their agents public or keep them private for specific use cases.
+- `app/`: Contains the main application code
+  - `routes/`: Defines the application routes and view functions
+  - `models.py`: Defines the database models
+  - `forms.py`: Defines the form classes used for user input
+  - `static/`: Contains static assets (CSS, JavaScript, images)
+  - `templates/`: Contains HTML templates for rendering pages
+- `config.py`: Configuration settings for the application
+- `run.py`: Entry point to run the application
 
-## Getting Started
+## Setup and Installation
 
-To get started with the NTUAgent platform, please follow the instructions below:
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/NTUAgent.git
+   ```
 
-1. Ensure you have Python installed on your system.
-2. Clone the repository to your local machine.
-3. Install the required dependencies by running `pip install -r requirements.txt` from the root directory.
-4. Set up your environment variables by copying the `.env.example` file to `.env` and filling in your details.
-5. Run the application using `python run.py`.
+2. Navigate to the project directory:
+   ```
+   cd NTUAgent
+   ```
+
+3. Create a virtual environment:
+   ```
+   python -m venv venv
+   ```
+
+4. Activate the virtual environment:
+   - For Windows:
+     ```
+     venv\Scripts\activate
+     ```
+   - For macOS and Linux:
+     ```
+     source venv/bin/activate
+     ```
+
+5. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+6. Set up the database:
+   ```
+   flask db upgrade
+   ```
+
+7. Configure the application:
+   - Rename the `.env.example` file to `.env`
+   - Update the `.env` file with your OpenAI API key and other necessary configurations
+
+8. Run the application:
+   ```
+   flask run
+   ```
+
+9. Access the application in your web browser at `http://localhost:5000`
+
+## Application Logic
+
+The NTUAgent application follows these main steps:
+
+1. Faculty members register and log in to the platform.
+2. Faculty members create AI agents by providing a name, description, and selecting a category.
+3. Users interact with the agents through a chat interface.
+4. User messages are sent to the OpenAI API to generate agent responses.
+5. The chat history and agent details are stored in the database.
+6. Faculty members can view and manage their created agents.
+7. Students can browse and interact with public agents.
 
 ## Contributing
 
-Contributions to the NTUAgent platform are welcome. Please feel free to fork the repository, make your changes, and submit a pull request.
+Contributions to the NTUAgent project are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
 
 ## License
 
