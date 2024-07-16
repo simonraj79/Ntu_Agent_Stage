@@ -10,6 +10,8 @@ class AgentForm(FlaskForm):
     system_prompt = TextAreaField('System Prompt', validators=[DataRequired()])
     category_id = SelectField('Category', coerce=int)
     is_public = BooleanField('Make this agent public')
+    temperature = DecimalField('Temperature (Creativity)', default=0.5, places=1, validators=[NumberRange(min=0, max=1)], 
+                               description='0 = Focused and deterministic, 1 = Creative and random')
 
     def __init__(self, *args, **kwargs):
         super(AgentForm, self).__init__(*args, **kwargs)
