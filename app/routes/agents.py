@@ -47,7 +47,8 @@ def create_agent():
             system_prompt=form.system_prompt.data,
             creator_id=current_user.id,
             category_id=form.category_id.data,  # Changed from category to category_id
-            is_public=form.is_public.data
+            is_public=form.is_public.data,
+            temperature=form.temperature.data
         )
         db.session.add(agent)
         db.session.commit()
@@ -87,7 +88,8 @@ def chat(agent_id):
                     stream = client.chat.completions.create(
                         model="gpt-3.5-turbo",
                         messages=messages,
-                        stream=True,
+                        temperature=agent.temperature,
+                        stream=True,  
                     )
                     full_response = ""
                     for chunk in stream:
