@@ -18,7 +18,12 @@ The application follows a modular structure with the following main components:
 
 - `app/`: Contains the main application code
   - `routes/`: Defines the application routes and view functions
-  - `models.py`: Defines the database models
+  - `models/`: Contains the database model definitions
+    - `user.py`: Defines the User model
+    - `agent.py`: Defines the AgentCategory, Agent, and AgentCollaborators models
+    - `conversation.py`: Defines the Conversation, ChatLog, and ConversationInsights models
+  - `utils/`: Contains utility functions
+    - `conversation_utils.py`: Defines conversation-related utility functions
   - `forms.py`: Defines the form classes used for user input
   - `static/`: Contains static assets (CSS, JavaScript, images)
   - `templates/`: Contains HTML templates for rendering pages
