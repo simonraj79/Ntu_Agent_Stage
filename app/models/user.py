@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models.agent import Agent
 from app.models.conversation import ChatLog
+from app.db import db
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

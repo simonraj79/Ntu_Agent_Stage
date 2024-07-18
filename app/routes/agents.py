@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, stream_with_context, Response, url_for, flash, redirect
 from flask_login import login_required, current_user
-from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, Conversation, ConversationInsights, get_conversation_preview
+from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, Conversation, ConversationInsights
+from app.utils.conversation_utils import get_conversation_preview
 from app import db
 from config import Config
 from openai import OpenAI, OpenAIError
@@ -47,7 +48,7 @@ def create_agent():
             description=form.description.data,
             system_prompt=form.system_prompt.data,
             creator_id=current_user.id,
-            category_id=form.category_id.data,  # Changed from category to category_id
+            category_id=form.category_id.data,
             is_public=form.is_public.data,
             temperature=form.temperature.data
         )
@@ -78,53 +79,51 @@ def chat(agent_id):
             conversation.updated_at = datetime.utcnow()
             db.session.commit()
 
-            def generate_response():
-                conversation = Conversation.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
-                if not conversation or (datetime.utcnow() - conversation.updated_at) > timedelta(hours=1):
-                    conversation = Conversation(agent_id=agent.id, user_id=current_user.id)
-                    db.session.add(conversation)
-                    db.session.commit()
+            return Response(stream_with_context(generate_response(agent, conversation, user_message, chat_log)), content_type='text/event-stream')
 
-                chat_logs = ChatLog.query.filter_by(conversation_id=conversation.id).order_by(ChatLog.timestamp).all()
-                messages = [{"role": "system", "content": agent.system_prompt}]
-                for log in chat_logs:
-                    messages.append({"role": "user", "content": log.user_message})
-                    messages.append({"role": "assistant", "content": log.ai_response})
-                messages.append({"role": "user", "content": user_message})
+    # For GET requests, render the chat template
+    chat_logs = ChatLog.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(ChatLog.timestamp).all()
+    return render_template('chat.html', agent=agent, chat_logs=chat_logs)
 
-                encoding = encoding_for_model("gpt-3.5-turbo")
-                num_tokens = len(encoding.encode(" ".join(msg["content"] for msg in messages)))
-                while num_tokens > 16384:
-                    messages.pop(1)  # Remove the oldest user message
-                    messages.pop(1)  # Remove the corresponding assistant response
-                    num_tokens = len(encoding.encode(" ".join(msg["content"] for msg in messages)))
-                try:
-                    print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
-                    print("Sending request to OpenAI API...")
-                    stream = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=messages,
-                        temperature=agent.temperature,
-                        stream=True,  
-                    )
-                    full_response = ""
-                    for chunk in stream:
-                        if chunk.choices[0].delta.content is not None:
-                            text_chunk = chunk.choices[0].delta.content
-                            full_response += text_chunk
-                            print(f'Streamed chunk: {text_chunk}')
-                            yield f"data: {text_chunk}\n\n"
-                    print(f'Full AI response: {full_response}')
-                    chat_log.ai_response = full_response
-                    db.session.commit()
-                except Exception as e:
-                    error_message = f"Error: {str(e)}"
-                    print(error_message)
-                    yield f"data: {error_message}\n\n"
+def generate_response(agent, conversation, user_message, chat_log):
+    try:
+        chat_logs = ChatLog.query.filter_by(conversation_id=conversation.id).order_by(ChatLog.timestamp).all()
+        messages = [{"role": "system", "content": agent.system_prompt}]
+        for log in chat_logs:
+            messages.append({"role": "user", "content": log.user_message})
+            if log.ai_response:
+                messages.append({"role": "assistant", "content": log.ai_response})
+        messages.append({"role": "user", "content": user_message})
 
-            return Response(stream_with_context(generate_response()), content_type='text/event-stream')
+        encoding = encoding_for_model("gpt-3.5-turbo")
+        num_tokens = len(encoding.encode(" ".join(str(msg.get("content", "")) for msg in messages)))
+        while num_tokens > 16384:
+            messages.pop(1)  # Remove the oldest user message
+            messages.pop(1)  # Remove the corresponding assistant response
+            num_tokens = len(encoding.encode(" ".join(str(msg.get("content", "")) for msg in messages)))
 
-    return render_template('chat.html', agent=agent)
+        print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
+        print("Sending request to OpenAI API...")
+        stream = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=agent.temperature,
+            stream=True,  
+        )
+        full_response = ""
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                text_chunk = chunk.choices[0].delta.content
+                full_response += text_chunk
+                print(f'Streamed chunk: {text_chunk}')
+                yield f"data: {text_chunk}\n\n"
+        print(f'Full AI response: {full_response}')
+        chat_log.ai_response = full_response
+        db.session.commit()
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        print(error_message)
+        yield f"data: {error_message}\n\n"
 
 @bp.route('/conversation-history')
 @login_required
@@ -158,7 +157,6 @@ def conversation_history():
                                'start_date': start_date,
                                'end_date': end_date
                            })
-
 
 @bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
 @login_required

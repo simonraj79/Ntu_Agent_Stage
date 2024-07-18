@@ -126,3 +126,4 @@ cython_debug/
 # Ignore specific Python scripts
 test_db_connection.py
 fetch_chat_logs.py
+.aider*

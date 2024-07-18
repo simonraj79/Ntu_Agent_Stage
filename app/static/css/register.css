@@ -27,6 +27,22 @@ body {
     width: 100%;
     max-width: 400px;
     padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo-container {
+    margin-bottom: 20px;
+}
+
+.logo {
+    max-width: 150px;
+    height: auto;
+}
+
+.card-body {
+    width: 100%;
 }
 
 h2 {
@@ -101,13 +117,4 @@ a:hover {
     .card {
         margin: 0 20px;
     }
-}.logo-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.logo {
-    max-width: 200px;
-    height: auto;
 }

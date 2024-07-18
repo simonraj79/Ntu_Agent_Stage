@@ -1,5 +1,6 @@
 from datetime import datetime
 from app import db
+from app.db import db
 
 class AgentCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,6 +17,7 @@ class Agent(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_used = db.Column(db.DateTime)
     is_public = db.Column(db.Boolean, default=False)
+    temperature = db.Column(db.Float, default=0.5)
     use_count = db.Column(db.Integer, default=0)
     category = db.relationship('AgentCategory', backref='agents')
     collaborators = db.relationship('AgentCollaborators', back_populates='agent', cascade='all, delete-orphan')

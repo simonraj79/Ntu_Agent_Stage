@@ -8,6 +8,7 @@ import time
 import logging
 from .nav_config import NAV_ITEMS
 from .db import db
+from app.models import User, Agent, AgentCategory, AgentCollaborators, ChatLog, Conversation, ConversationInsights
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -75,7 +76,7 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def utility_processor():
-        from app.models import get_conversation_preview
+        from app.utils.conversation_utils import get_conversation_preview
         return dict(get_conversation_preview=get_conversation_preview)
 
     @login_manager.user_loader
