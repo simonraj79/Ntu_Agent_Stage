@@ -14,7 +14,7 @@ class Agent(db.Model):
     system_prompt = db.Column(db.Text)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('agent_category.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Add this line
     last_used = db.Column(db.DateTime)
     is_public = db.Column(db.Boolean, default=False)
     temperature = db.Column(db.Float, default=0.5)

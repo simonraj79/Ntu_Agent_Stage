@@ -10,6 +10,7 @@ import traceback
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
 from app.forms import AgentForm, DeleteAgentForm
+from . import bp
 
 bp = Blueprint('agents', __name__)
 
@@ -81,9 +82,33 @@ def chat(agent_id):
 
             return Response(stream_with_context(generate_response(agent, conversation, user_message, chat_log)), content_type='text/event-stream')
 
-    # For GET requests, render the chat template
-    chat_logs = ChatLog.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(ChatLog.timestamp).all()
+    # Fetch recent chat logs for GET requests
+    conversation = Conversation.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
+    chat_logs = []
+    if conversation:
+        chat_logs = ChatLog.query.filter_by(conversation_id=conversation.id).order_by(ChatLog.timestamp).all()
+    
     return render_template('chat.html', agent=agent, chat_logs=chat_logs)
+
+@bp.route('/chat/<int:agent_id>/clear', methods=['POST'])
+@login_required
+def clear_chat(agent_id):
+    try:
+        # Find the most recent conversation for this agent and user
+        conversation = Conversation.query.filter_by(agent_id=agent_id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
+        
+        if conversation:
+            # Create a new conversation
+            new_conversation = Conversation(agent_id=agent_id, user_id=current_user.id)
+            db.session.add(new_conversation)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Chat cleared successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'No conversation found to clear'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
 
 def generate_response(agent, conversation, user_message, chat_log):
     try:
@@ -95,20 +120,12 @@ def generate_response(agent, conversation, user_message, chat_log):
                 messages.append({"role": "assistant", "content": log.ai_response})
         messages.append({"role": "user", "content": user_message})
 
-        encoding = encoding_for_model("gpt-3.5-turbo")
-        num_tokens = len(encoding.encode(" ".join(str(msg.get("content", "")) for msg in messages)))
-        while num_tokens > 16384:
-            messages.pop(1)  # Remove the oldest user message
-            messages.pop(1)  # Remove the corresponding assistant response
-            num_tokens = len(encoding.encode(" ".join(str(msg.get("content", "")) for msg in messages)))
-
         print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
         print("Sending request to OpenAI API...")
         stream = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
-            temperature=agent.temperature,
-            stream=True,  
+            stream=True,
         )
         full_response = ""
         for chunk in stream:

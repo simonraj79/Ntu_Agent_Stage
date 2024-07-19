@@ -2,42 +2,45 @@
 {% extends "base.html" %}
 {% block title %}Chat with {{ agent.name }} - NTUAgent{% endblock %}
 {% block extra_head %}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="chat-container">
     <div class="chat-header">
         <h1>Chat with {{ agent.name }}</h1>
+        <button id="clear-chat">Clear Chat</button>
     </div>
+
     <div id="chat-messages" class="chat-messages">
         {% for log in chat_logs %}
-        <div class="message user">
-            <div class="message-text">{{ log.user_message }}</div>
-            <div class="avatar">U</div>
-        </div>
-        <div class="message ai">
-            <div class="avatar">A</div>
-            <div class="message-text">{{ log.ai_response }}</div>
-        </div>
+            <div class="message user">
+                <div class="message-text">{{ log.user_message }}</div>
+                <div class="avatar">U</div>
+            </div>
+            {% if log.ai_response %}
+                <div class="message ai">
+                    <div class="avatar">A</div>
+                    <div class="message-text">{{ log.ai_response | safe }}</div>
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
+
     <div class="chat-input-container">
         <form id="chat-form" data-chat-url="{{ url_for('agents.chat', agent_id=agent.id) }}">
-            <input type="text" id="message-input" placeholder="Type your message..." required>
+            <input type="text" id="message-input" placeholder="Type your message...">
             <button type="submit">Send</button>
         </form>
-        <div class="fine-print">LLM can make mistakes. Check important info.</div>
+        <div class="fine-print">
+            LLM can make mistakes. Check important info.
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.0.3/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.0/purify.min.js"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

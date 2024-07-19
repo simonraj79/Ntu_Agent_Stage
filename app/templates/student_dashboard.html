@@ -1,27 +1,24 @@
-<!-- app/templates/student_dashboard.html -->
 {% extends "base.html" %}
-
 {% block title %}Student Dashboard - NTUAgent{% endblock %}
-
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/student_dashboard.css') }}">
 {% endblock %}
-
 {% block content %}
+
 <div class="dashboard-container">
-    <h2 class="dashboard-title">Student Dashboard</h2>
+    <h1 class="dashboard-title">Welcome, {{ current_user.username }}</h1>
 
     <div class="dashboard-grid">
-        <div class="dashboard-card agents-card">
-            <h3>Available Agents</h3>
+        <div class="dashboard-card available-agents-card">
+            <h2>Available Chatbots</h2>
             <div class="agent-grid">
                 {% for agent in available_agents %}
                 <div class="agent-item">
-                    <h4>{{ agent.name }}</h4>
+                    <h3>{{ agent.name }}</h3>
                     <p class="agent-description">{{ agent.description }}</p>
                     <p class="agent-category">Category: {{ agent.category.name if agent.category else 'Uncategorized' }}</p>
                     <div class="agent-actions">
-                        <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary">Chat</a>
+                        <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary">Chat Now</a>
                     </div>
                 </div>
                 {% endfor %}
@@ -29,7 +26,7 @@
         </div>
 
         <div class="dashboard-card recent-chats-card">
-            <h3>Recent Chats</h3>
+            <h2>Your Recent Chats</h2>
             <ul class="recent-chats-list">
                 {% for conversation in recent_conversations %}
                 <li>
@@ -40,6 +37,22 @@
                 {% endfor %}
             </ul>
         </div>
+
+        <div class="dashboard-card featured-agents-card">
+            <h2>Featured Chatbots</h2>
+            <div class="featured-agent-grid">
+                {% for agent in featured_agents %}
+                <div class="featured-agent-item">
+                    <h3>{{ agent.name }}</h3>
+                    <p class="agent-description">{{ agent.description }}</p>
+                    <div class="agent-actions">
+                        <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary">Try Now</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
+
 {% endblock %}

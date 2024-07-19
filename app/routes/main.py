@@ -22,10 +22,16 @@ def faculty_dashboard():
                            total_conversations=total_conversations, 
                            recent_conversations=recent_conversations)
 
+@bp.route('/student-dashboard')
+@login_required
 def student_dashboard():
-    public_agents = Agent.query.filter_by(is_public=True).all()
+    available_agents = Agent.query.filter_by(is_public=True).all()
     recent_conversations = Conversation.query.filter_by(user_id=current_user.id).order_by(Conversation.updated_at.desc()).limit(5).all()
     
+    # Instead of filtering by is_featured, we'll get the 3 most recently created public agents
+    featured_agents = Agent.query.filter_by(is_public=True).order_by(Agent.created_at.desc()).limit(3).all()
+    
     return render_template('student_dashboard.html', 
-                           public_agents=public_agents, 
-                           recent_conversations=recent_conversations)
+                           available_agents=available_agents, 
+                           recent_conversations=recent_conversations,
+                           featured_agents=featured_agents)

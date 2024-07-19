@@ -2,10 +2,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('chat-form');
     const input = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
+    const clearChatButton = document.getElementById('clear-chat');
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     if (form && input) {
         form.addEventListener('submit', sendMessage);
+    }
+
+    if (clearChatButton) {
+        clearChatButton.addEventListener('click', clearChat);
     }
 
     function sendMessage(event) {
@@ -77,7 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const textElement = document.createElement('div');
         textElement.classList.add('message-text');
-        textElement.innerHTML = DOMPurify.sanitize(marked.parse(message));
+        if (sender === 'user') {
+            textElement.textContent = message;
+        } else {
+            textElement.innerHTML = DOMPurify.sanitize(marked.parse(message));
+        }
         
         if (sender === 'user') {
             messageElement.appendChild(textElement);
@@ -106,6 +115,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function clearChat() {
+        const chatUrl = form.getAttribute('data-chat-url');
+        fetch(`${chatUrl}/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                while (chatMessages.firstChild) {
+                    chatMessages.removeChild(chatMessages.firstChild);
+                }
+                console.log('Chat cleared successfully');
+            } else {
+                console.error('Failed to clear chat:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
     }
 
     // Initial scroll to bottom
