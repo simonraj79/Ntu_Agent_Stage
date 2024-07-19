@@ -8,7 +8,7 @@ import time
 import logging
 from .nav_config import NAV_ITEMS
 from .db import db
-from app.models import User, Agent, AgentCategory, AgentCollaborators, ChatLog, Conversation, ConversationInsights
+from app.models import User
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -60,15 +60,15 @@ def create_app(config_class=Config):
             logger.error("Failed to connect to the database after 3 attempts.")
             raise
 
-    try:
-        from app.routes import auth, main, agents
-        app.register_blueprint(auth.bp)
-        app.register_blueprint(main.bp)
-        app.register_blueprint(agents.bp)
-        logger.info("Blueprints registered successfully.")
-    except ImportError as e:
-        logger.error(f"Error importing routes: {str(e)}")
-        raise
+    # Delayed import of blueprints
+    from app.routes.auth import bp as auth_bp
+    from app.routes.main import bp as main_bp
+    from app.routes.agents import bp as agents_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(agents_bp)
+    logger.info("Blueprints registered successfully.")
 
     @app.context_processor
     def inject_nav_items():
