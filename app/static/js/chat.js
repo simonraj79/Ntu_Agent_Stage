@@ -1,6 +1,5 @@
 // app/static/js/chat.js
 document.addEventListener('DOMContentLoaded', function() {
-    
     const form = document.getElementById('chat-form');
     const input = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
@@ -9,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (form && input) {
         form.addEventListener('submit', sendMessage);
+        input.addEventListener('input', adjustTextareaHeight); // Add event listener
     }
 
     if (clearChatButton) {
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (message) {
             displayMessage('user', message);
             input.value = '';
+            adjustTextareaHeight(); // Adjust height after clearing input
 
             fetch(chatUrl, {
                 method: 'POST',
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const aiMessageElement = createMessageElement('ai', '');
                 chatMessages.appendChild(aiMessageElement);
                 scrollToBottom();
-                
+
                 function readChunk() {
                     return reader.read().then(({ done, value }) => {
                         if (done) {
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return readChunk();
                     });
                 }
-                
+
                 return readChunk();
             })
             .catch(error => {
@@ -89,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             textElement.innerHTML = DOMPurify.sanitize(marked.parse(message));
         }
-        
+
         if (sender === 'user') {
             messageElement.appendChild(textElement);
             messageElement.appendChild(avatarElement);
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
             messageElement.appendChild(avatarElement);
             messageElement.appendChild(textElement);
         }
-        
+
         return messageElement;
     }
 
@@ -147,6 +148,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
         });
+    }
+
+    function adjustTextareaHeight() {
+        input.style.height = 'auto';
+        input.style.height = (input.scrollHeight) + 'px';
     }
 
     // Initial scroll to bottom

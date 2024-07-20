@@ -1,3 +1,4 @@
+/* app/static/css/chat.css */
 :root {
     --background-color: #f0f2f5;
     --user-message-color: #8A0303; /* Crimson Red for NTU, Singapore */
@@ -140,6 +141,7 @@ body, html {
     background-color: var(--clear-button-hover-color);
 }
 
+
 #message-input {
     flex: 1;
     padding: 8px;
@@ -150,6 +152,8 @@ body, html {
     font-size: 16px;
     box-shadow: var(--box-shadow);
     margin-right: 10px;
+    resize: none; /* Prevent manual resizing */
+    overflow: hidden; /* Hide scrollbar */
 }
 
 #chat-form button[type="submit"] {

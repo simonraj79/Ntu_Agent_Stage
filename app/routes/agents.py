@@ -186,7 +186,7 @@ def generate_response(agent, conversation, user_message, chat_log):
         print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
         print("Sending request to OpenAI API...")
         stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="GPT-4o-mini",
             messages=messages,
             stream=True,
         )
@@ -324,7 +324,7 @@ def generate_insights(conversation_id):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="GPT-4o-mini",
             messages=[
                 {"role": "system", "content": "Analyze the following conversation and provide insights. Your response should be in this exact format:\nTopics: topic1, topic2, topic3\nSentiment: [a number between -1 and 1]\nSummary: A brief summary of the conversation."},
                 {"role": "user", "content": full_conversation}

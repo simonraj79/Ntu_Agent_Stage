@@ -29,14 +29,13 @@
     <div class="chat-input-container">
         <form id="chat-form" data-chat-url="{{ url_for('agents.chat', agent_id=agent.id) }}">
             <button id="clear-chat" class="clear-chat-btn">Clear Chat</button>
-            <input type="text" id="message-input" placeholder="Type your message...">
+            <textarea id="message-input" placeholder="Type your message..."></textarea>
             <button type="submit">Send</button>
         </form>
         <div class="fine-print">
             LLM can make mistakes. Check important info.
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
