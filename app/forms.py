@@ -1,6 +1,6 @@
 # app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, PasswordField, SubmitField, DecimalField, BooleanField
+from wtforms import StringField, TextAreaField, SelectField, DecimalField, BooleanField, SubmitField, PasswordField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, NumberRange
 from app.models.agent import AccessLevel
 
@@ -12,7 +12,8 @@ class AgentForm(FlaskForm):
     access_level = SelectField('Access Level', choices=[(level.name, level.value) for level in AccessLevel])
     temperature = DecimalField('Temperature (Creativity)', default=0.5, places=1, validators=[NumberRange(min=0, max=1)], 
                                description='0 = Focused and deterministic, 1 = Creative and random')
-    is_public = BooleanField('Public', default=False)  # Added this line
+    generate_sharing_link = BooleanField('Generate Sharing Link', default=False)
+    submit = SubmitField('Create Agent')
 
     def __init__(self, *args, **kwargs):
         super(AgentForm, self).__init__(*args, **kwargs)

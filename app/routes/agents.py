@@ -11,6 +11,10 @@ from datetime import datetime, timedelta
 from app.forms import AgentForm, DeleteAgentForm
 from app.models.agent import AccessLevel
 from urllib.parse import urlencode
+from app.models.agent import AccessLevel
+from app.utils.token_generator import generate_share_token, create_share_url
+
+
 
 bp = Blueprint('agents', __name__)
 
@@ -40,18 +44,67 @@ def create_agent():
             system_prompt=form.system_prompt.data,
             creator_id=current_user.id,
             category_id=form.category_id.data,
-            is_public=form.is_public.data,
-            temperature=form.temperature.data,
-            access_level=AccessLevel[form.access_level.data]
+            access_level=AccessLevel[form.access_level.data],
+            temperature=form.temperature.data
         )
-        if agent.access_level == AccessLevel.PRIVATE:
-            agent.generate_access_token()
+        if form.generate_sharing_link.data:
+            agent.generate_sharing_link()
         db.session.add(agent)
         db.session.commit()
         flash('Agent created successfully!', 'success')
         return redirect(url_for('agents.agent_directory'))
-    
     return render_template('create_agent.html', form=form)
+
+@bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
+@login_required
+def edit_agent(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id:
+        flash('You do not have permission to edit this agent.', 'error')
+        return redirect(url_for('agents.agent_directory'))
+    
+    form = AgentForm(obj=agent)
+    form.category_id.choices = [(c.id, c.name) for c in AgentCategory.query.all()]
+    
+    # Create an instance of DeleteAgentForm
+    delete_form = DeleteAgentForm()
+    
+    if form.validate_on_submit():
+        form.populate_obj(agent)
+        agent.access_level = AccessLevel[form.access_level.data]
+        if form.generate_sharing_link.data and not agent.sharing_link:
+            agent.generate_sharing_link()
+        elif not form.generate_sharing_link.data:
+            agent.sharing_link = None
+        db.session.commit()
+        flash('Agent updated successfully.', 'success')
+        return redirect(url_for('agents.agent_details', agent_id=agent.id))
+    
+    return render_template('edit_agent.html', form=form, agent=agent, delete_form=delete_form)
+
+@bp.route('/regenerate-link/<int:agent_id>', methods=['POST'])
+@login_required
+def regenerate_link(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id:
+        return jsonify({'error': 'Permission denied'}), 403
+    agent.regenerate_sharing_link()
+    return jsonify({'new_link': agent.sharing_link})
+
+@bp.route('/shared-agent/<string:token>')
+@login_required
+def access_shared_agent(token):
+    agent = Agent.query.filter_by(sharing_link=token).first_or_404()
+    return redirect(url_for('agents.chat', agent_id=agent.id))
+
+@bp.route('/agent/<int:agent_id>')
+@login_required
+def agent_details(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id and agent.access_level != AccessLevel.PUBLIC:
+        flash('You do not have permission to view this agent.', 'error')
+        return redirect(url_for('agents.agent_directory'))
+    return render_template('agent_details.html', agent=agent)
 
 @bp.route('/chat/<int:agent_id>', methods=['GET', 'POST'])
 @login_required
@@ -216,35 +269,30 @@ def conversation_history():
 @bp.route('/agent-directory')
 @login_required
 def agent_directory():
-    user_agents = Agent.query.filter(or_(Agent.creator_id == current_user.id, 
-                                         Agent.collaborators.any(user_id=current_user.id))).all()
-    other_agents = Agent.query.filter(Agent.creator_id != current_user.id, 
-                                      Agent.access_level == AccessLevel.PUBLIC).all()
+    page = request.args.get('page', 1, type=int)
+    
+    # Query for user's agents with pagination
+    user_agents = Agent.query.filter(
+        or_(Agent.creator_id == current_user.id, 
+            Agent.collaborators.any(user_id=current_user.id))
+    ).order_by(Agent.created_at.desc()).paginate(page=page, per_page=12)
+    
+    # Query for other public agents, limited to 5
+    other_agents = Agent.query.filter(
+        Agent.creator_id != current_user.id,
+        Agent.access_level == AccessLevel.PUBLIC
+    ).order_by(Agent.created_at.desc()).limit(5).all()
+    
+    # Query for categories
     categories = AgentCategory.query.all()
-    return render_template('agent_directory.html', user_agents=user_agents, 
-                           other_agents=other_agents, categories=categories)
+    
+    return render_template('agent_directory.html', 
+                           user_agents=user_agents, 
+                           other_agents=other_agents, 
+                           categories=categories,
+                           AccessLevel=AccessLevel)
 
-@bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
-@login_required
-def edit_agent(agent_id):
-    agent = Agent.query.get_or_404(agent_id)
-    if agent.creator_id != current_user.id:
-        flash('You do not have permission to edit this agent.')
-        return redirect(url_for('agents.agent_directory'))
-    
-    form = AgentForm(obj=agent)
-    if form.validate_on_submit():
-        form.populate_obj(agent)
-        agent.category_id = form.category_id.data
-        
-        if agent.access_level == AccessLevel.PRIVATE and not agent.access_token:
-            agent.generate_access_token()
-        
-        db.session.commit()
-        flash('Agent updated successfully.')
-        return redirect(url_for('agents.agent_directory'))
-    
-    return render_template('edit_agent.html', form=form, agent=agent, delete_form=DeleteAgentForm())
+
 
 @bp.route('/delete-agent/<int:agent_id>', methods=['POST'])
 @login_required

@@ -1,61 +1,58 @@
 <!-- app/templates/edit_agent.html -->
 {% extends "base.html" %}
+
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/edit_agent.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/create_agent.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 {% endblock %}
+
 {% block content %}
 <div class="container">
     <h2>Edit Agent: {{ agent.name }}</h2>
-    <form method="POST" class="edit-agent-form">
+    <form method="POST">
         {{ form.hidden_tag() }}
         <div class="form-group">
-            {{ form.name.label(class="form-label") }}
-            {{ form.name(class="form-control", required=true) }}
+            {{ form.name.label }}
+            {{ form.name(class="form-control") }}
         </div>
         <div class="form-group">
-            {{ form.description.label(class="form-label") }}
-            {{ form.description(class="form-control", rows=3, required=true) }}
+            {{ form.description.label }}
+            {{ form.description(class="form-control") }}
         </div>
         <div class="form-group">
-            {{ form.system_prompt.label(class="form-label") }}
-            {{ form.system_prompt(class="form-control", rows=5, required=true) }}
+            {{ form.system_prompt.label }}
+            {{ form.system_prompt(class="form-control") }}
         </div>
         <div class="form-group">
-            {{ form.category_id.label(class="form-label") }}
-            {{ form.category_id(class="form-select", required=true) }}
+            {{ form.category_id.label }}
+            {{ form.category_id(class="form-control") }}
         </div>
         <div class="form-group">
-            {{ form.access_level.label(class="form-label") }}
-            {{ form.access_level(class="form-select", required=true) }}
-            <small class="form-text text-muted">
-                Public: Visible and accessible to all users<br>
-                Private: Only accessible via a shared link<br>
-                Faculty: Visible and accessible to all faculty members<br>
-                Creator: Only visible and accessible to you
-            </small>
+            {{ form.access_level.label }}
+            {{ form.access_level(class="form-control") }}
         </div>
         <div class="form-group">
-            {{ form.temperature.label(class="form-label") }}
-            <div class="range-slider">
-                {{ form.temperature(class="form-range", min=0, max=1, step=0.1) }}
-                <div class="range-labels">
-                    <span>0 (Focused)</span>
-                    <span>1 (Creative)</span>
-                </div>
-            </div>
+            {{ form.temperature.label }}
+            {{ form.temperature(class="form-control") }}
             <small class="form-text text-muted">{{ form.temperature.description }}</small>
         </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Update Agent</button>
-            <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary">Cancel</a>
+        <div class="form-check">
+            {{ form.generate_sharing_link(class="form-check-input") }}
+            {{ form.generate_sharing_link.label(class="form-check-label") }}
         </div>
+        <button type="submit" class="btn btn-primary mt-3">Update Agent</button>
     </form>
 
-    {% if agent.access_level.name == 'PRIVATE' %}
+    {% if agent.sharing_link %}
     <div class="share-link mt-4">
         <h3>Share Link</h3>
-        <input type="text" class="form-control" value="{{ url_for('agents.chat_with_token', access_token=agent.access_token, _external=True) }}" readonly>
-        <button class="btn btn-primary mt-2" onclick="copyShareLink()">Copy Link</button>
+        <div class="input-group">
+            <input type="text" class="form-control" id="shareLink" value="{{ url_for('agents.access_shared_agent', token=agent.sharing_link, _external=True) }}" readonly>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">Copy</button>
+            </div>
+        </div>
+        <button class="btn btn-secondary mt-2" onclick="regenerateShareLink()">Regenerate Link</button>
     </div>
     {% endif %}
 
@@ -67,10 +64,36 @@
 
 <script>
 function copyShareLink() {
-    var copyText = document.querySelector(".share-link input");
+    var copyText = document.getElementById("shareLink");
     copyText.select();
+    copyText.setSelectionRange(0, 99999);
     document.execCommand("copy");
     alert("Share link copied to clipboard!");
+}
+
+function regenerateShareLink() {
+    if (confirm('Are you sure you want to regenerate the sharing link? The old link will no longer work.')) {
+        fetch('{{ url_for("agents.regenerate_link", agent_id=agent.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.new_link) {
+                document.getElementById("shareLink").value = '{{ url_for("agents.access_shared_agent", token="", _external=True) }}' + data.new_link;
+                alert('New link generated successfully!');
+            } else {
+                alert('Failed to generate new link.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while regenerating the link.');
+        });
+    }
 }
 </script>
 {% endblock %}

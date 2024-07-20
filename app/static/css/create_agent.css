@@ -1,3 +1,5 @@
+/* app/static/css/create_agent.css */
+
 :root {
     --ntu-midnight-blue: #191970;
     --ntu-crimson-red: #8A0303;
@@ -23,43 +25,56 @@ h2 {
     color: var(--ntu-midnight-blue);
     text-align: center;
     margin-bottom: 30px;
+    font-weight: 600;
 }
 
 .create-agent-form {
     background-color: var(--card-background);
-    padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
 }
 
-.form-label {
-    font-weight: 600;
-    color: var(--ntu-midnight-blue);
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
     margin-bottom: 5px;
+    color: var(--ntu-midnight-blue);
+    font-weight: 600;
 }
 
-.form-control, .form-select, .form-range {
+.form-control {
     width: 100%;
     padding: 10px;
-    margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-family: var(--font-family);
+    font-size: 16px;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus {
     border-color: var(--ntu-midnight-blue);
     outline: none;
     box-shadow: 0 0 0 2px rgba(25, 25, 112, 0.2);
 }
 
-.form-check {
-    margin-bottom: 20px;
+textarea.form-control {
+    min-height: 100px;
 }
 
-.form-check-input:checked {
-    background-color: var(--ntu-midnight-blue);
-    border-color: var(--ntu-midnight-blue);
+.form-check {
+    margin-top: 10px;
+}
+
+.form-check-input {
+    margin-right: 10px;
+}
+
+.form-check-label {
+    color: var(--text-color);
 }
 
 .btn {
@@ -69,7 +84,7 @@ h2 {
     cursor: pointer;
     font-family: var(--font-family);
     font-weight: 600;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.3s ease;
 }
 
 .btn-primary {
@@ -86,26 +101,50 @@ h2 {
     opacity: 0.9;
 }
 
-.range-slider {
-    position: relative;
-    margin-bottom: 10px;
+.form-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Styling for the temperature range input */
+input[type="range"] {
+    width: 100%;
+    margin-top: 10px;
+    -webkit-appearance: none;
+    background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--ntu-midnight-blue);
+    cursor: pointer;
+    margin-top: -5px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
 }
 
 .range-labels {
     display: flex;
     justify-content: space-between;
+    margin-top: 5px;
+}
+
+.range-labels span {
     font-size: 0.8em;
-    color: #777;
+    color: #666;
 }
 
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
+.mt-3 {
+    margin-top: 15px;
 }
 
 @media (max-width: 768px) {
