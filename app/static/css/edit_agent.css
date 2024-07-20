@@ -25,11 +25,12 @@ h2 {
     margin-bottom: 30px;
 }
 
-form {
+.edit-agent-form {
     background-color: var(--card-background);
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
 .form-label {
@@ -38,7 +39,7 @@ form {
     margin-bottom: 5px;
 }
 
-.form-control, .form-select {
+.form-control, .form-select, .form-range {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
@@ -82,8 +83,59 @@ form {
     color: white;
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
 .btn:hover {
     opacity: 0.9;
+}
+
+.range-slider {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #777;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.access-level-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.share-link {
+    background-color: var(--card-background);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.share-link h3 {
+    margin-top: 0;
+    color: var(--ntu-midnight-blue);
+}
+
+.delete-agent-form {
+    text-align: center;
+    margin-top: 20px;
 }
 
 @media (max-width: 768px) {
@@ -91,9 +143,7 @@ form {
         padding: 10px;
     }
     
-    form {
+    .edit-agent-form, .share-link {
         padding: 20px;
     }
-}.delete-agent-form {
-    margin-top: 20px;
 }

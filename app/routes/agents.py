@@ -1,16 +1,16 @@
+# app/routes/agents.py
 from flask import Blueprint, render_template, request, jsonify, stream_with_context, Response, url_for, flash, redirect
 from flask_login import login_required, current_user
 from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, Conversation, ConversationInsights
-from app.utils.conversation_utils import get_conversation_preview
 from app import db
 from config import Config
 from openai import OpenAI, OpenAIError
-from tiktoken import encoding_for_model
 import traceback
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
 from app.forms import AgentForm, DeleteAgentForm
-from . import bp
+from app.models.agent import AccessLevel
+from urllib.parse import urlencode
 
 bp = Blueprint('agents', __name__)
 
@@ -28,16 +28,6 @@ def agent_reports():
     chat_logs = ChatLog.query.filter_by(user_id=current_user.id).order_by(ChatLog.timestamp.desc()).paginate(page=page, per_page=10)
     return render_template('agent_reports.html', chat_logs=chat_logs)
 
-@bp.route('/agent-directory')
-@login_required
-def agent_directory():
-    user_agents = Agent.query.filter(or_(Agent.creator_id == current_user.id, 
-                                         Agent.collaborators.any(user_id=current_user.id))).all()
-    other_agents = Agent.query.filter(Agent.creator_id != current_user.id, 
-                                      Agent.is_public == True).all()
-    categories = AgentCategory.query.all()
-    return render_template('agent_directory.html', user_agents=user_agents, 
-                           other_agents=other_agents, categories=categories)
 
 @bp.route('/create-agent', methods=['GET', 'POST'])
 @login_required
@@ -51,8 +41,11 @@ def create_agent():
             creator_id=current_user.id,
             category_id=form.category_id.data,
             is_public=form.is_public.data,
-            temperature=form.temperature.data
+            temperature=form.temperature.data,
+            access_level=AccessLevel[form.access_level.data]
         )
+        if agent.access_level == AccessLevel.PRIVATE:
+            agent.generate_access_token()
         db.session.add(agent)
         db.session.commit()
         flash('Agent created successfully!', 'success')
@@ -64,6 +57,9 @@ def create_agent():
 @login_required
 def chat(agent_id):
     agent = Agent.query.get_or_404(agent_id)
+    if not can_access_agent(agent, current_user):
+        flash('You do not have permission to access this agent.', 'error')
+        return redirect(url_for('agents.agent_directory'))
     if request.method == 'POST':
         user_message = request.json.get('message')
         if user_message:
@@ -82,7 +78,6 @@ def chat(agent_id):
 
             return Response(stream_with_context(generate_response(agent, conversation, user_message, chat_log)), content_type='text/event-stream')
 
-    # Fetch recent chat logs for GET requests
     conversation = Conversation.query.filter_by(agent_id=agent.id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
     chat_logs = []
     if conversation:
@@ -90,15 +85,30 @@ def chat(agent_id):
     
     return render_template('chat.html', agent=agent, chat_logs=chat_logs)
 
+def can_access_agent(agent, user):
+    if agent.access_level == AccessLevel.PUBLIC:
+        return True
+    if agent.access_level == AccessLevel.PRIVATE:
+        return agent.creator_id == user.id
+    if agent.access_level == AccessLevel.FACULTY:
+        return user.is_faculty
+    if agent.access_level == AccessLevel.CREATOR:
+        return agent.creator_id == user.id
+    return False
+
+@bp.route('/chat/token/<string:access_token>')
+@login_required
+def chat_with_token(access_token):
+    agent = Agent.query.filter_by(access_token=access_token).first_or_404()
+    return chat(agent.id)
+
 @bp.route('/chat/<int:agent_id>/clear', methods=['POST'])
 @login_required
 def clear_chat(agent_id):
     try:
-        # Find the most recent conversation for this agent and user
         conversation = Conversation.query.filter_by(agent_id=agent_id, user_id=current_user.id).order_by(Conversation.updated_at.desc()).first()
         
         if conversation:
-            # Create a new conversation
             new_conversation = Conversation(agent_id=agent_id, user_id=current_user.id)
             db.session.add(new_conversation)
             db.session.commit()
@@ -142,6 +152,28 @@ def generate_response(agent, conversation, user_message, chat_log):
         print(error_message)
         yield f"data: {error_message}\n\n"
 
+@bp.route('/view-conversation/<int:conversation_id>')
+@login_required
+def view_conversation(conversation_id):
+    conversation = Conversation.query.get_or_404(conversation_id)
+    if conversation.agent.creator_id != current_user.id:
+        flash('You do not have permission to view this conversation.')
+        return redirect(url_for('agents.conversation_history'))
+    
+    chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
+    return render_template('view_conversation.html', conversation=conversation, chat_logs=chat_logs)
+
+
+
+def update_url_params(args, updates):
+    params = args.copy()
+    for key, value in updates.items():
+        if value is not None:
+            params[key] = value
+        else:
+            params.pop(key, None)
+    return urlencode(params)
+
 @bp.route('/conversation-history')
 @login_required
 def conversation_history():
@@ -157,7 +189,7 @@ def conversation_history():
     query = Conversation.query.join(Agent).filter(Agent.creator_id == current_user.id)
 
     if agent_id:
-        query = query.filter_by(agent_id=int(agent_id))
+        query = query.filter(Conversation.agent_id == int(agent_id))
     if start_date:
         query = query.filter(Conversation.created_at >= datetime.strptime(start_date, '%Y-%m-%d'))
     if end_date:
@@ -166,6 +198,9 @@ def conversation_history():
     conversations = query.order_by(Conversation.updated_at.desc()).paginate(page=page, per_page=10)
     agents = Agent.query.all()
 
+    prev_url = url_for('agents.conversation_history') + '?' + update_url_params(request.args, {'page': conversations.prev_num}) if conversations.has_prev else None
+    next_url = url_for('agents.conversation_history') + '?' + update_url_params(request.args, {'page': conversations.next_num}) if conversations.has_next else None
+
     return render_template('conversation_history.html', 
                            conversations=conversations, 
                            agents=agents,
@@ -173,12 +208,25 @@ def conversation_history():
                                'agent': agent_id,
                                'start_date': start_date,
                                'end_date': end_date
-                           })
+                           },
+                           prev_url=prev_url,
+                           next_url=next_url)
+
+
+@bp.route('/agent-directory')
+@login_required
+def agent_directory():
+    user_agents = Agent.query.filter(or_(Agent.creator_id == current_user.id, 
+                                         Agent.collaborators.any(user_id=current_user.id))).all()
+    other_agents = Agent.query.filter(Agent.creator_id != current_user.id, 
+                                      Agent.access_level == AccessLevel.PUBLIC).all()
+    categories = AgentCategory.query.all()
+    return render_template('agent_directory.html', user_agents=user_agents, 
+                           other_agents=other_agents, categories=categories)
 
 @bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
 @login_required
 def edit_agent(agent_id):
-    print(f"Editing agent with id: {agent_id}")  # Debug log
     agent = Agent.query.get_or_404(agent_id)
     if agent.creator_id != current_user.id:
         flash('You do not have permission to edit this agent.')
@@ -186,9 +234,12 @@ def edit_agent(agent_id):
     
     form = AgentForm(obj=agent)
     if form.validate_on_submit():
-        print("Form submitted and validated")  # Debug log
         form.populate_obj(agent)
-        agent.category_id = form.category_id.data  # Manually set the category_id
+        agent.category_id = form.category_id.data
+        
+        if agent.access_level == AccessLevel.PRIVATE and not agent.access_token:
+            agent.generate_access_token()
+        
         db.session.commit()
         flash('Agent updated successfully.')
         return redirect(url_for('agents.agent_directory'))
@@ -210,22 +261,8 @@ def delete_agent(agent_id):
         flash('Agent deleted successfully.')
         return redirect(url_for('agents.agent_directory'))
 
-    flash('Invalid request.')
+    flash('Failed to delete agent.')
     return redirect(url_for('agents.edit_agent', agent_id=agent_id))
-
-@bp.route('/conversation/<int:conversation_id>')
-@login_required
-def view_conversation(conversation_id):
-    conversation = Conversation.query.get_or_404(conversation_id)
-    if conversation.agent.creator_id != current_user.id:
-        flash('You do not have permission to view this conversation.')
-        return redirect(url_for('agents.conversation_history'))
-    
-    chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
-    for log in chat_logs:
-        print(f"User message: {log.user_message}")
-        print(f"AI response: {log.ai_response}")
-    return render_template('view_conversation.html', conversation=conversation, chat_logs=chat_logs)
 
 @bp.route('/generate-insights/<int:conversation_id>', methods=['POST'])
 @login_required
@@ -237,8 +274,6 @@ def generate_insights(conversation_id):
     chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
     full_conversation = "\n".join([f"User: {log.user_message}\nAI: {log.ai_response}" for log in chat_logs])
 
-    print(f"Full conversation: {full_conversation}")  # Log the full conversation
-
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -249,11 +284,8 @@ def generate_insights(conversation_id):
         )
 
         insights_text = response.choices[0].message.content
-        print(f"Raw insights: {insights_text}")  # Log the raw insights
 
         topics, sentiment, summary = parse_insights(insights_text)
-
-        print(f"Parsed insights: Topics: {topics}, Sentiment: {sentiment}, Summary: {summary}")  # Log the parsed insights
 
         conversation_insights = ConversationInsights.query.filter_by(conversation_id=conversation_id).first()
         if conversation_insights:
@@ -279,7 +311,6 @@ def generate_insights(conversation_id):
             }
         })
     except Exception as e:
-        print(f"Error generating insights: {str(e)}")  # Log any errors
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -298,6 +329,7 @@ def parse_insights(insights_text):
             except ValueError:
                 pass
         elif line.startswith("Summary:"):
-            summary = ':'.join(line.split(':')[1:]).strip()  # In case the summary contains colons
+            summary = ':'.join(line.split(':')[1:]).strip()
 
     return topics, sentiment, summary
+

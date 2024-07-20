@@ -11,6 +11,8 @@
     --font-family: 'Poppins', sans-serif;
     --fine-print-color: #999;
     --send-button-color: #8A0303; /* Crimson Red for NTU, Singapore */
+    --clear-button-color: #191970; /* Red for Clear Button */
+    --clear-button-hover-color: #0e0e34; /* Darker Red for Hover */
 }
 
 body, html {
@@ -103,22 +105,39 @@ body, html {
 }
 
 .chat-input-container {
+    display: flex;
+    flex-direction: column;
     padding: 0;
     background-color: var(--background-color);
     width: 100%;
     box-shadow: var(--box-shadow);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: center; /* Center the items */
 }
 
 #chat-form {
     display: flex;
     width: 100%;
     border-top: 1px solid #ddd;
-    padding: 5px 10px;
+    padding: 10px;
     background-color: var(--input-background);
     align-items: center;
+    justify-content: space-between; /* Distribute space evenly */
+}
+
+#clear-chat {
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    background-color: var(--clear-button-color);
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: var(--box-shadow);
+    margin-right: 10px;
+}
+
+#clear-chat:hover {
+    background-color: var(--clear-button-hover-color);
 }
 
 #message-input {
@@ -130,10 +149,10 @@ body, html {
     color: var(--text-color);
     font-size: 16px;
     box-shadow: var(--box-shadow);
+    margin-right: 10px;
 }
 
-#chat-form button {
-    margin-left: 10px;
+#chat-form button[type="submit"] {
     padding: 8px 20px;
     border: none;
     border-radius: var(--border-radius);
@@ -142,6 +161,10 @@ body, html {
     cursor: pointer;
     font-size: 16px;
     box-shadow: var(--box-shadow);
+}
+
+#chat-form button[type="submit"]:hover {
+    background-color: #7a0202; /* Darker shade for hover */
 }
 
 .fine-print {
@@ -165,7 +188,7 @@ body, html {
         font-size: 14px;
     }
 
-    #chat-form button {
+    #chat-form button[type="submit"] {
         font-size: 14px;
         padding: 10px 15px;
     }

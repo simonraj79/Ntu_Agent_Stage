@@ -3,7 +3,6 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/create_agent.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -27,9 +26,15 @@
             {{ form.category_id.label(class="form-label") }}
             {{ form.category_id(class="form-select", required=true) }}
         </div>
-        <div class="form-check">
-            {{ form.is_public(class="form-check-input") }}
-            {{ form.is_public.label(class="form-check-label") }}
+        <div class="form-group">
+            {{ form.access_level.label(class="form-label") }}
+            {{ form.access_level(class="form-select", required=true) }}
+            <small class="form-text text-muted">
+                Public: Visible and accessible to all users<br>
+                Private: Only accessible via a shared link<br>
+                Faculty: Visible and accessible to all faculty members<br>
+                Creator: Only visible and accessible to you
+            </small>
         </div>
         <div class="form-group">
             {{ form.temperature.label(class="form-label") }}
@@ -41,6 +46,10 @@
                 </div>
             </div>
             <small class="form-text text-muted">{{ form.temperature.description }}</small>
+        </div>
+        <div class="form-group">
+            {{ form.is_public.label(class="form-check-label") }}
+            {{ form.is_public(class="form-check-input") }}
         </div>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Create Agent</button>

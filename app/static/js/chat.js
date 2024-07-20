@@ -1,4 +1,6 @@
+// app/static/js/chat.js
 document.addEventListener('DOMContentLoaded', function() {
+    
     const form = document.getElementById('chat-form');
     const input = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');

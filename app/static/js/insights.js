@@ -1,3 +1,4 @@
+//app\static\js\insights.js
 document.addEventListener('DOMContentLoaded', function() {
     const insightsBtn = document.getElementById('generate-insights-btn');
     if (insightsBtn) {

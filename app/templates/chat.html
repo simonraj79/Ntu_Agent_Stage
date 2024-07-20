@@ -9,7 +9,6 @@
 <div class="chat-container">
     <div class="chat-header">
         <h1>Chat with {{ agent.name }}</h1>
-        <button id="clear-chat">Clear Chat</button>
     </div>
 
     <div id="chat-messages" class="chat-messages">
@@ -29,6 +28,7 @@
 
     <div class="chat-input-container">
         <form id="chat-form" data-chat-url="{{ url_for('agents.chat', agent_id=agent.id) }}">
+            <button id="clear-chat" class="clear-chat-btn">Clear Chat</button>
             <input type="text" id="message-input" placeholder="Type your message...">
             <button type="submit">Send</button>
         </form>

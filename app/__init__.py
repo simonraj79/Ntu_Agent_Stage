@@ -2,6 +2,7 @@
 from flask import Flask
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 from sqlalchemy import exc
 from config import Config
 import time
@@ -40,6 +41,8 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
+    migrate = Migrate(app, db)  # Initialize Flask-Migrate
+
     login_manager.init_app(app)
     csrf.init_app(app)
 
@@ -60,7 +63,7 @@ def create_app(config_class=Config):
             logger.error("Failed to connect to the database after 3 attempts.")
             raise
 
-    # Delayed import of blueprints
+    # Delayed import of blueprints to avoid circular import issues
     from app.routes.auth import bp as auth_bp
     from app.routes.main import bp as main_bp
     from app.routes.agents import bp as agents_bp

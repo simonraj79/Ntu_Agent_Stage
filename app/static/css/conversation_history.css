@@ -23,6 +23,7 @@ h2 {
     color: var(--ntu-midnight-blue);
     text-align: center;
     margin-bottom: 30px;
+    font-weight: 600;
 }
 
 .filter-form {
@@ -34,35 +35,62 @@ h2 {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
+    align-items: flex-end;
+    border: 1px solid var(--ntu-midnight-blue);
 }
 
-.filter-form div {
+.filter-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.form-group {
     flex: 1;
     min-width: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.button-group {
+    display: flex;
+    align-items: flex-end;
+    margin-top: auto;
 }
 
 .filter-form label {
     display: block;
     margin-bottom: 5px;
     color: var(--ntu-midnight-blue);
+    font-weight: 600;
 }
 
 .filter-form select,
 .filter-form input[type="date"] {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--ntu-midnight-blue);
     border-radius: 5px;
     font-family: var(--font-family);
+    color: var(--text-color);
+}
+
+.filter-form select:focus,
+.filter-form input[type="date"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(25, 25, 112, 0.2);
 }
 
 .conversation-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background-color: var(--card-background);
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
 .conversation-table th,
@@ -75,6 +103,11 @@ h2 {
 .conversation-table th {
     background-color: var(--ntu-midnight-blue);
     color: white;
+    font-weight: 600;
+}
+
+.conversation-table tr:last-child td {
+    border-bottom: none;
 }
 
 .conversation-table tr:nth-child(even) {
@@ -90,6 +123,7 @@ h2 {
     text-decoration: none;
     transition: background-color 0.3s, color 0.3s;
     font-family: var(--font-family);
+    font-weight: 600;
 }
 
 .btn-primary {
@@ -103,13 +137,18 @@ h2 {
 }
 
 .btn-outline-primary {
-    border: 1px solid var(--ntu-midnight-blue);
+    border: 2px solid var(--ntu-midnight-blue);
     color: var(--ntu-midnight-blue);
     background-color: transparent;
 }
 
 .btn:hover {
     opacity: 0.9;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--ntu-midnight-blue);
+    color: white;
 }
 
 .pagination {
@@ -126,11 +165,25 @@ h2 {
         flex-direction: column;
     }
 
-    .filter-form div {
+    .filter-inputs {
+        flex-direction: column;
+    }
+
+    .form-group {
         width: 100%;
+    }
+
+    .button-group {
+        width: 100%;
+        margin-top: 15px;
     }
 
     .conversation-table {
         font-size: 14px;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
     }
 }

@@ -38,7 +38,7 @@ h2 {
     margin-bottom: 5px;
 }
 
-.form-control, .form-select {
+.form-control, .form-select, .form-range {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
@@ -86,15 +86,7 @@ h2 {
     opacity: 0.9;
 }
 
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-    
-    .create-agent-form {
-        padding: 20px;
-    }
-}.range-slider {
+.range-slider {
     position: relative;
     margin-bottom: 10px;
 }
@@ -104,4 +96,24 @@ h2 {
     justify-content: space-between;
     font-size: 0.8em;
     color: #777;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .create-agent-form {
+        padding: 20px;
+    }
 }

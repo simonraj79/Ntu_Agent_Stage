@@ -1,3 +1,4 @@
+#app\utils\conversation_utils.py
 from app.models.conversation import ChatLog
 
 def get_conversation_preview(conversation_id):

@@ -1,4 +1,3 @@
-<!-- app/templates/conversation_history.html -->
 {% extends "base.html" %}
 
 {% block extra_head %}
@@ -11,26 +10,28 @@
     <h2>Conversation History</h2>
 
     <form method="GET" action="{{ url_for('agents.conversation_history') }}" class="filter-form">
-        <div>
-            <label for="agent">Agent:</label>
-            <select name="agent" id="agent">
-                <option value="">All Agents</option>
-                {% for agent in agents %}
-                    <option value="{{ agent.id }}" {% if request.args.get('agent')|int == agent.id %}selected{% endif %}>
-                        {{ agent.name }}
-                    </option>
-                {% endfor %}
-            </select>
+        <div class="filter-inputs">
+            <div class="form-group">
+                <label for="agent">Agent:</label>
+                <select name="agent" id="agent">
+                    <option value="">All Agents</option>
+                    {% for agent in agents %}
+                        <option value="{{ agent.id }}" {% if current_filters.agent|int == agent.id %}selected{% endif %}>
+                            {{ agent.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" value="{{ current_filters.start_date }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" value="{{ current_filters.end_date }}">
+            </div>
         </div>
-        <div>
-            <label for="start_date">Start Date:</label>
-            <input type="date" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
-        </div>
-        <div>
-            <label for="end_date">End Date:</label>
-            <input type="date" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
-        </div>
-        <div>
+        <div class="form-group button-group">
             <button type="submit" class="btn btn-primary">Filter</button>
         </div>
     </form>
@@ -61,20 +62,14 @@
             </tbody>
         </table>
 
-        {% if conversations.has_prev or conversations.has_next %}
         <div class="pagination">
-            {% if conversations.has_prev %}
-                {% set prev_args = request.args.copy() %}
-                {{ prev_args.update({'page': conversations.prev_num}) or '' }}
-                <a href="{{ url_for('agents.conversation_history', **prev_args) }}" class="btn btn-outline-primary">&laquo; Previous</a>
+            {% if prev_url %}
+                <a href="{{ prev_url }}" class="btn btn-outline-primary">« Previous</a>
             {% endif %}
-            {% if conversations.has_next %}
-                {% set next_args = request.args.copy() %}
-                {{ next_args.update({'page': conversations.next_num}) or '' }}
-                <a href="{{ url_for('agents.conversation_history', **next_args) }}" class="btn btn-outline-primary">Next &raquo;</a>
+            {% if next_url %}
+                <a href="{{ next_url }}" class="btn btn-outline-primary">Next »</a>
             {% endif %}
         </div>
-        {% endif %}
     {% else %}
         <p>You haven't had any conversations with your agents yet.</p>
     {% endif %}
