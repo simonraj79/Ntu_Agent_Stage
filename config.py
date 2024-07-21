@@ -1,7 +1,7 @@
-# In config.py
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
 class Config:
@@ -25,4 +25,13 @@ class Config:
     if not OPENAI_API_KEY:
         raise ValueError("OPENAI_API_KEY is not set in the environment variables")
 
-    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5000'
+    @classmethod
+    def log_config(cls):
+        print("Configuration loaded:")
+        print(f"Using {'production' if os.environ.get('FLASK_ENV') == 'production' else 'development'} environment")
+        print(f"Database: {'PostgreSQL' if cls.SQLALCHEMY_DATABASE_URI.startswith('postgresql://') else 'SQLite'}")
+        print(f"OpenAI API Key: {'Set' if cls.OPENAI_API_KEY else 'Not set'}")
+
+    @staticmethod
+    def get_base_url():
+        return os.environ.get('BASE_URL') or ''

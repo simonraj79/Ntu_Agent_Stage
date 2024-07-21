@@ -2,12 +2,13 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_agent.css') }}">
 <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 {% endblock %}
 {% block content %}
 <div class="container">
     <div class="card">
         <h2>Edit Agent: {{ agent.name }}</h2>
-        <form method="POST">
+        <form method="POST" novalidate>
             {{ form.hidden_tag() }}
             <div class="form-group">
                 {{ form.name.label(class="form-label") }}
@@ -37,7 +38,7 @@
             <div class="form-group">
                 <label for="temperature" class="form-label">Temperature (Creativity): <span id="temperatureValue">{{ form.temperature.data }}</span></label>
                 {{ form.temperature(class="form-range", type="range", min="0", max="1", step="0.1", data_tippy_content="Adjust the creativity level of the agent") }}
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between slider-labels">
                     <span>Focused</span>
                     <span>Balanced</span>
                     <span>Creative</span>
@@ -45,8 +46,8 @@
                 <small class="form-text text-muted">Adjust the agent's balance between focused and creative responses.</small>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Update Agent</button>
-                <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Agent</button>
+                <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
             </div>
         </form>
 

@@ -1,25 +1,29 @@
 {% extends "base.html" %}
 {% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/agent_directory.css') }}">
 {% endblock %}
+
 {% block content %}
 <div class="dashboard-container">
-    <h2 class="dashboard-title">Agent Directory</h2>
+    <h1 class="dashboard-title">Agent Directory</h1>
     <div class="dashboard-grid">
         <div class="sidebar">
             <div class="create-agent-card">
-                <h3>Create New Agent</h3>
-                <a href="{{ url_for('agents.create_agent') }}" class="btn btn-create">
-                    <i class="fas fa-plus-circle"></i> Create New Agent
-                </a>
+                <h2>Create New Agent</h2>
+                <div class="create-button-container">
+                    <a href="{{ url_for('agents.create_agent') }}" class="btn btn-create">
+                        <i class="fas fa-plus-circle"></i> Create New Agent
+                    </a>
+                </div>
             </div>
             <div class="public-agents-card">
-                <h3>Other Public Agents</h3>
-                {% if other_agents %}
+                <h2>Other Public Agents</h2>
+                {% if public_agents %}
                     <ul class="public-agents-list">
-                    {% for agent in other_agents %}
+                    {% for agent in public_agents %}
                         <li>
-                            <span>{{ agent.name }}</span>
+                            {{ agent.name }}
                             <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-comments"></i> Chat
                             </a>
@@ -32,52 +36,55 @@
             </div>
         </div>
         <div class="main-content">
-            <div class="your-agents-card">
-                <h3>Your Agents</h3>
-                {% if user_agents.items %}
-                    <div class="agent-grid">
-                    {% for agent in user_agents.items %}
-                        <div class="agent-item">
-                            <div class="agent-header">
-                                <h4>{{ agent.name }}</h4>
-                                <span class="agent-status {{ agent.access_level.name.lower() }}">
-                                    {{ agent.access_level.value }}
-                                </span>
-                            </div>
-                            <p class="agent-description">{{ agent.description }}</p>
-                            <p class="agent-category">Category: {{ agent.category.name if agent.category else 'Uncategorized' }}</p>
-                            <div class="agent-actions">
-                                <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-comments"></i> Chat
-                                </a>
-                                <a href="{{ url_for('agents.edit_agent', agent_id=agent.id) }}" class="btn btn-secondary btn-sm">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                                {% if agent.access_level != AccessLevel.PRIVATE %}
-                                    <button class="btn btn-share btn-sm" data-agent-id="{{ agent.id }}" data-access-level="{{ agent.access_level.name }}">
-                                        <i class="fas fa-share-alt"></i> Share
-                                    </button>
-                                {% endif %}
-                            </div>
+            <h2>Your Agents</h2>
+            <div class="agent-grid">
+                {% for agent in user_agents.items %}
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <h3>{{ agent.name }}</h3>
+                            <span class="agent-status {{ agent.access_level.name.lower() }}">
+                                {{ agent.access_level.value }}
+                            </span>
                         </div>
-                    {% endfor %}
+                        <p class="agent-description">{{ agent.description }}</p>
+                        <p class="agent-category">Category: {{ agent.category.name if agent.category else 'Uncategorized' }}</p>
+                        <div class="agent-actions">
+                            <a href="{{ url_for('agents.chat', agent_id=agent.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-comments"></i> Chat
+                            </a>
+                            <a href="{{ url_for('agents.edit_agent', agent_id=agent.id) }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            {% if agent.access_level != AccessLevel.PRIVATE %}
+                                <button class="btn btn-share btn-sm" data-agent-id="{{ agent.id }}" data-access-level="{{ agent.access_level.name }}">
+                                    <i class="fas fa-share-alt"></i> Share
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="pagination">
-                        {% if user_agents.has_prev %}
-                            <a href="{{ url_for('agents.agent_directory', page=user_agents.prev_num) }}" class="btn btn-outline-primary">« Previous</a>
-                        {% endif %}
-                        {% if user_agents.has_next %}
-                            <a href="{{ url_for('agents.agent_directory', page=user_agents.next_num) }}" class="btn btn-outline-primary">Next »</a>
-                        {% endif %}
-                    </div>
-                {% else %}
-                    <p>You haven't created any agents yet.</p>
+                {% endfor %}
+            </div>
+            <div class="pagination">
+                {% if user_agents.has_prev %}
+                    <a href="{{ url_for('agents.agent_directory', page=user_agents.prev_num) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                {% endif %}
+                <span class="current-page">
+                    Page {{ user_agents.page }} of {{ user_agents.pages }}
+                </span>
+                {% if user_agents.has_next %}
+                    <a href="{{ url_for('agents.agent_directory', page=user_agents.next_num) }}" class="btn btn-outline-primary">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+<div id="toast-container"></div>
 {% endblock %}
+
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/agent_management.js') }}"></script>
 {% endblock %}

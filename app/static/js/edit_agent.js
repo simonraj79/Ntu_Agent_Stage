@@ -14,6 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: 'light-border'
     });
 
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+            alert('Please fill out all required fields correctly.');
+        }
+        form.classList.add('was-validated');
+    });
+
     // Initialize slider background
     updateSliderBackground(temperatureSlider);
 });

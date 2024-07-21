@@ -1,15 +1,14 @@
 # app/__init__.py
+# app/__init__.py
 from flask import Flask
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from flask_migrate import Migrate
 from sqlalchemy import exc
 from config import Config
 import time
 import logging
 from .nav_config import NAV_ITEMS
 from .db import db
-from app.models import User
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -40,9 +39,10 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    db.init_app(app)
-    migrate = Migrate(app, db)  # Initialize Flask-Migrate
+    # Log configuration
+    config_class.log_config()
 
+    db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
 
@@ -63,7 +63,7 @@ def create_app(config_class=Config):
             logger.error("Failed to connect to the database after 3 attempts.")
             raise
 
-    # Delayed import of blueprints to avoid circular import issues
+    # Import and register blueprints
     from app.routes.auth import bp as auth_bp
     from app.routes.main import bp as main_bp
     from app.routes.agents import bp as agents_bp

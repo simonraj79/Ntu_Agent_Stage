@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
+            alert('Please fill out all required fields correctly.');
         }
         form.classList.add('was-validated');
     });

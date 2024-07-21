@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template, request, jsonify, stream_with_context, Response, url_for, flash, redirect, current_app
 from flask_login import login_required, current_user
 from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, Conversation, ConversationInsights
+from app.models.agent import AccessLevel
 from app import db
 from config import Config
 from openai import OpenAI, OpenAIError
@@ -9,10 +10,7 @@ import traceback
 from sqlalchemy import or_, func
 from datetime import datetime, timedelta
 from app.forms import AgentForm, DeleteAgentForm
-from app.models.agent import AccessLevel
 from urllib.parse import urlencode
-
-
 
 
 bp = Blueprint('agents', __name__)
@@ -24,6 +22,7 @@ def mask_api_key(api_key):
         return f"{api_key[:4]}...{api_key[-4:]}"
     return "Not set"
 
+
 @bp.route('/agent-reports')
 @login_required
 def agent_reports():
@@ -31,23 +30,23 @@ def agent_reports():
     chat_logs = ChatLog.query.filter_by(user_id=current_user.id).order_by(ChatLog.timestamp.desc()).paginate(page=page, per_page=10)
     return render_template('agent_reports.html', chat_logs=chat_logs)
 
-
 @bp.route('/create-agent', methods=['GET', 'POST'])
 @login_required
 def create_agent():
     form = AgentForm()
     if form.validate_on_submit():
         try:
+            access_level = AccessLevel[form.access_level.data]
             agent = Agent(
                 name=form.name.data,
                 description=form.description.data,
                 system_prompt=form.system_prompt.data,
                 creator_id=current_user.id,
                 category_id=form.category_id.data,
-                access_level=AccessLevel[form.access_level.data],
+                access_level=access_level,
                 temperature=form.temperature.data
             )
-            if agent.access_level == AccessLevel.SECRET_LINK:
+            if access_level == AccessLevel.SECRET_LINK:
                 agent.generate_secret_link()
             db.session.add(agent)
             db.session.commit()
@@ -58,15 +57,6 @@ def create_agent():
             current_app.logger.error(f"Error creating agent: {str(e)}")
             flash(f'Error creating agent: {str(e)}', 'error')
     return render_template('create_agent.html', form=form, title="Create New Agent")
-
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
-from flask_login import login_required, current_user
-from app.models import Agent, AgentCategory
-from app import db
-from app.forms import AgentForm, DeleteAgentForm
-from app.models.agent import AccessLevel  # Make sure to import AccessLevel
-
-# ... other imports and route definitions ...
 
 @bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
 @login_required
@@ -89,7 +79,7 @@ def edit_agent(agent_id):
         try:
             db.session.commit()
             flash('Agent updated successfully.', 'success')
-            return redirect(url_for('agents.agent_directory'))  # Redirect to agent directory instead
+            return redirect(url_for('agents.agent_directory'))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating agent: {str(e)}")
@@ -104,7 +94,8 @@ def regenerate_link(agent_id):
     if agent.creator_id != current_user.id:
         return jsonify({'error': 'Permission denied'}), 403
     agent.regenerate_secret_link()
-    return jsonify({'new_link': agent.secret_link})
+    full_url = url_for('agents.access_secret_agent', token=agent.secret_link, _external=True)
+    return jsonify({'new_link': full_url})
 
 @bp.route('/secret-agent/<string:token>')
 @login_required
@@ -112,16 +103,7 @@ def access_secret_agent(token):
     agent = Agent.query.filter_by(secret_link=token).first_or_404()
     return redirect(url_for('agents.chat', agent_id=agent.id))
 
-def can_access_agent(agent, user):
-    if agent.access_level == AccessLevel.PUBLIC:
-        return True
-    if agent.access_level == AccessLevel.PRIVATE:
-        return agent.creator_id == user.id
-    if agent.access_level == AccessLevel.SECRET_LINK:
-        return True  # The access is controlled by the secret link itself
-    return False
-
-@bp.route('/get-secret-link/<int:agent_id>')
+@bp.route('/get-secret-link/<int:agent_id>', methods=['POST'])
 @login_required
 def get_secret_link(agent_id):
     agent = Agent.query.get_or_404(agent_id)
@@ -132,7 +114,9 @@ def get_secret_link(agent_id):
     if not agent.secret_link:
         agent.generate_secret_link()
         db.session.commit()
-    return jsonify({'secret_link': url_for('agents.access_secret_agent', token=agent.secret_link, _external=True)})
+    
+    full_url = url_for('agents.access_secret_agent', token=agent.secret_link, _external=True)
+    return jsonify({'secret_link': full_url})
 
 def can_access_agent(agent, user):
     if agent.access_level == AccessLevel.PUBLIC:
@@ -153,7 +137,7 @@ def agent_directory():
             Agent.collaborators.any(user_id=current_user.id))
     ).order_by(Agent.created_at.desc()).paginate(page=page, per_page=12)
     
-    other_agents = Agent.query.filter(
+    public_agents = Agent.query.filter(
         Agent.creator_id != current_user.id,
         Agent.access_level == AccessLevel.PUBLIC
     ).order_by(Agent.created_at.desc()).limit(5).all()
@@ -162,14 +146,27 @@ def agent_directory():
     
     return render_template('agent_directory.html', 
                            user_agents=user_agents, 
-                           other_agents=other_agents, 
+                           public_agents=public_agents, 
                            categories=categories,
                            AccessLevel=AccessLevel)
+
+@bp.route('/generate-sharable-link/<int:agent_id>', methods=['POST'])
+@login_required
+def generate_sharable_link(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id:
+        return jsonify({'error': 'Permission denied'}), 403
+    if agent.access_level != AccessLevel.PUBLIC:
+        return jsonify({'error': 'Only public agents can have sharable links'}), 400
+    
+    agent.generate_sharable_link()
+    db.session.commit()
+    return jsonify({'sharable_link': url_for('agents.access_shared_agent', token=agent.sharable_link, _external=True)})
 
 @bp.route('/shared-agent/<string:token>')
 @login_required
 def access_shared_agent(token):
-    agent = Agent.query.filter_by(sharing_link=token).first_or_404()
+    agent = Agent.query.filter_by(sharable_link=token).first_or_404()
     return redirect(url_for('agents.chat', agent_id=agent.id))
 
 @bp.route('/agent/<int:agent_id>')
@@ -219,10 +216,8 @@ def can_access_agent(agent, user):
         return True
     if agent.access_level == AccessLevel.PRIVATE:
         return agent.creator_id == user.id
-    if agent.access_level == AccessLevel.FACULTY:
-        return user.is_faculty
-    if agent.access_level == AccessLevel.CREATOR:
-        return agent.creator_id == user.id
+    if agent.access_level == AccessLevel.SECRET_LINK:
+        return True  # The access is controlled by the secret link itself
     return False
 
 @bp.route('/chat/token/<string:access_token>')
@@ -291,7 +286,6 @@ def view_conversation(conversation_id):
     
     chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
     return render_template('view_conversation.html', conversation=conversation, chat_logs=chat_logs)
-
 
 
 def update_url_params(args, updates):
@@ -363,14 +357,34 @@ def delete_agent(agent_id):
 @bp.route('/generate-insights/<int:conversation_id>', methods=['POST'])
 @login_required
 def generate_insights(conversation_id):
-    conversation = Conversation.query.get_or_404(conversation_id)
-    if not current_user.is_faculty and conversation.agent.creator_id != current_user.id:
-        return jsonify({'error': 'You do not have permission to generate insights for this conversation.'}), 403
-
-    chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
-    full_conversation = "\n".join([f"User: {log.user_message}\nAI: {log.ai_response}" for log in chat_logs])
-
     try:
+        # Check if the conversation exists
+        conversation = Conversation.query.get(conversation_id)
+        if not conversation:
+            current_app.logger.error(f"Conversation with id {conversation_id} not found in the database")
+            
+            # Additional checks
+            conversation_count = Conversation.query.count()
+            current_app.logger.info(f"Total number of conversations in the database: {conversation_count}")
+            
+            chat_log_count = ChatLog.query.filter_by(conversation_id=conversation_id).count()
+            current_app.logger.info(f"Number of chat logs for conversation {conversation_id}: {chat_log_count}")
+            
+            return jsonify({'error': f'Conversation with id {conversation_id} not found in the database'}), 404
+
+        # Check permissions
+        if not current_user.is_faculty and conversation.agent.creator_id != current_user.id:
+            current_app.logger.warning(f"User {current_user.id} attempted to access conversation {conversation_id} without permission")
+            return jsonify({'error': 'You do not have permission to generate insights for this conversation.'}), 403
+
+        # Fetch chat logs
+        chat_logs = ChatLog.query.filter_by(conversation_id=conversation_id).order_by(ChatLog.timestamp).all()
+        if not chat_logs:
+            current_app.logger.warning(f"No chat logs found for conversation {conversation_id}")
+            return jsonify({'error': 'No chat logs found for this conversation'}), 400
+
+        # Generate insights using OpenAI
+        full_conversation = "\n".join([f"User: {log.user_message}\nAI: {log.ai_response}" for log in chat_logs])
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -378,24 +392,45 @@ def generate_insights(conversation_id):
                 {"role": "user", "content": full_conversation}
             ]
         )
-
         insights_text = response.choices[0].message.content
+        current_app.logger.info(f"OpenAI response for conversation {conversation_id}: {insights_text}")
 
+        # Parse insights
         topics, sentiment, summary = parse_insights(insights_text)
 
-        conversation_insights = ConversationInsights.query.filter_by(conversation_id=conversation_id).first()
-        if conversation_insights:
-            db.session.delete(conversation_insights)
+        # Update or create insights
+        try:
+            conversation_insights = ConversationInsights.query.filter_by(conversation_id=conversation_id).first()
+            if conversation_insights:
+                conversation_insights.topics = topics
+                conversation_insights.sentiment = sentiment
+                conversation_insights.summary = summary
+                conversation_insights.generated_at = datetime.utcnow()
+                current_app.logger.info(f"Updated existing insights for conversation {conversation_id}")
+            else:
+                conversation_insights = ConversationInsights(
+                    conversation_id=conversation_id,
+                    topics=topics,
+                    sentiment=sentiment,
+                    summary=summary,
+                    generated_at=datetime.utcnow()
+                )
+                db.session.add(conversation_insights)
+                current_app.logger.info(f"Created new insights for conversation {conversation_id}")
 
-        conversation_insights = ConversationInsights(
-            conversation_id=conversation_id,
-            topics=topics,
-            sentiment=sentiment,
-            summary=summary,
-            generated_at=datetime.utcnow()
-        )
-        db.session.add(conversation_insights)
-        db.session.commit()
+            db.session.commit()
+        except Exception as db_error:
+            db.session.rollback()
+            current_app.logger.error(f"Database error while saving insights for conversation {conversation_id}: {str(db_error)}")
+            
+            # Additional logging for database state
+            conversation_check = Conversation.query.get(conversation_id)
+            current_app.logger.info(f"Conversation {conversation_id} exists in database: {conversation_check is not None}")
+            
+            chat_log_count = ChatLog.query.filter_by(conversation_id=conversation_id).count()
+            current_app.logger.info(f"Number of chat logs for conversation {conversation_id}: {chat_log_count}")
+            
+            return jsonify({'error': 'An error occurred while saving the insights'}), 500
 
         return jsonify({
             'success': True, 
@@ -406,26 +441,31 @@ def generate_insights(conversation_id):
                 'generated_at': conversation_insights.generated_at.isoformat()
             }
         })
+
     except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"Unexpected error in generate_insights for conversation {conversation_id}: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred while generating insights'}), 500
 
 def parse_insights(insights_text):
     topics = []
     sentiment = 0.0
     summary = ""
 
-    lines = insights_text.split('\n')
-    for line in lines:
-        if line.startswith("Topics:"):
-            topics = [topic.strip() for topic in line.split(':')[1].split(',')]
-        elif line.startswith("Sentiment:"):
-            try:
-                sentiment = float(line.split(':')[1].strip())
-            except ValueError:
-                pass
-        elif line.startswith("Summary:"):
-            summary = ':'.join(line.split(':')[1:]).strip()
+    try:
+        lines = insights_text.split('\n')
+        for line in lines:
+            if line.startswith("Topics:"):
+                topics = [topic.strip() for topic in line.split(':')[1].split(',')]
+            elif line.startswith("Sentiment:"):
+                try:
+                    sentiment = float(line.split(':')[1].strip())
+                except ValueError:
+                    current_app.logger.warning(f"Could not parse sentiment: {line}")
+            elif line.startswith("Summary:"):
+                summary = ':'.join(line.split(':')[1:]).strip()
+
+        current_app.logger.info(f"Parsed insights - Topics: {topics}, Sentiment: {sentiment}, Summary: {summary}")
+    except Exception as e:
+        current_app.logger.error(f"Error parsing insights: {str(e)}")
 
     return topics, sentiment, summary
-

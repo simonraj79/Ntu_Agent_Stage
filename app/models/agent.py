@@ -3,7 +3,6 @@ from enum import Enum
 from app.db import db
 from datetime import datetime
 import secrets
-from flask import current_app
 
 class AccessLevel(Enum):
     PUBLIC = 'Public'
@@ -28,22 +27,32 @@ class Agent(db.Model):
     temperature = db.Column(db.Float, default=0.5)
     use_count = db.Column(db.Integer, default=0)
     secret_link = db.Column(db.String(128), unique=True)
+    sharable_link = db.Column(db.String(128), unique=True)  # New field for public agent sharable link
     
     category = db.relationship('AgentCategory', backref='agents')
     collaborators = db.relationship('AgentCollaborators', back_populates='agent', cascade='all, delete-orphan')
     conversations = db.relationship('Conversation', backref='agent', lazy='dynamic')
-
+    
     def generate_secret_link(self):
-        token = secrets.token_urlsafe(16)
-        base_url = current_app.config['BASE_URL']
-        self.secret_link = f"{base_url}/secret-agent/{token}"
+        self.secret_link = secrets.token_urlsafe(16)
+
+    def generate_sharable_link(self):
+        self.sharable_link = secrets.token_urlsafe(16)
 
     def regenerate_secret_link(self):
         self.generate_secret_link()
         db.session.commit()
 
+    def regenerate_sharable_link(self):
+        self.generate_sharable_link()
+        db.session.commit()
+
     def disable_secret_link(self):
         self.secret_link = None
+        db.session.commit()
+
+    def disable_sharable_link(self):
+        self.sharable_link = None
         db.session.commit()
 
 class AgentCollaborators(db.Model):

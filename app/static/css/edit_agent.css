@@ -53,18 +53,17 @@ textarea.form-control {
     min-height: 100px;
 }
 
-.btn {
-    padding: 12px;
-    font-weight: 600;
-    font-size: 1.1em;
-    border-radius: 6px;
-    transition: background-color 0.3s, color 0.3s;
-}
-
 .btn-primary {
     background-color: #8A0303;
     border-color: #8A0303;
     color: white;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 1.1em;
+    border-radius: 20px;
+    text-align: center;
+    text-decoration: none;
+    width: 48%;
 }
 
 .btn-primary:hover {
@@ -76,6 +75,13 @@ textarea.form-control {
     background-color: #6c757d;
     border-color: #6c757d;
     color: white;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 1.1em;
+    border-radius: 20px;
+    text-align: center;
+    text-decoration: none;
+    width: 48%;
 }
 
 .btn-secondary:hover {
@@ -86,6 +92,14 @@ textarea.form-control {
 .form-range {
     width: 100%;
     margin-top: 10px;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #6c757d;
 }
 
 .d-flex {
@@ -117,36 +131,6 @@ textarea.form-control {
     margin-top: 20px;
 }
 
-.form-actions .btn {
-    width: 48%;
-}
-
-.share-link {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #ced4da;
-}
-
-.share-link h3 {
-    color: #191970;
-    margin-bottom: 15px;
-}
-
-.input-group {
-    margin-bottom: 10px;
-}
-
-.copy-link, .regenerate-link {
-    background-color: #191970;
-    color: white;
-    border: none;
-}
-
-.copy-link:hover, .regenerate-link:hover {
-    background-color: #0f0f4b;
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -160,5 +144,8 @@ textarea.form-control {
     .form-actions .btn {
         width: 100%;
         margin-bottom: 10px;
+    }
+    .standalone-btn {
+        width: 100%;
     }
 }
