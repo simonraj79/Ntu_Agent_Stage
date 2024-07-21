@@ -1,45 +1,47 @@
-// app/static/js/agent_management.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Copying link to clipboard
-    document.querySelectorAll('.btn-share, .copy-link').forEach(button => {
+    // Sharing functionality
+    document.querySelectorAll('.btn-share').forEach(button => {
         button.addEventListener('click', function() {
-            const link = this.getAttribute('data-link');
-            navigator.clipboard.writeText(link).then(() => {
-                alert('Link copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy link: ', err);
-            });
+            const agentId = this.getAttribute('data-agent-id');
+            const accessLevel = this.getAttribute('data-access-level');
+            
+            if (accessLevel === 'SECRET_LINK') {
+                // For secret link, we need to fetch the link from the server
+                fetch(`/get-secret-link/${agentId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrf_token')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.secret_link) {
+                        copyToClipboard(data.secret_link);
+                    } else {
+                        alert('Failed to get secret link.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while getting the secret link.');
+                });
+            } else if (accessLevel === 'PUBLIC') {
+                // For public agents, we can construct the link directly
+                const publicLink = `${window.location.origin}/chat/${agentId}`;
+                copyToClipboard(publicLink);
+            }
         });
     });
 
-    // Regenerating link
-    document.querySelectorAll('.regenerate-link').forEach(button => {
-        button.addEventListener('click', function() {
-            const agentId = this.getAttribute('data-agent-id');
-            fetch(`/regenerate-link/${agentId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrf_token')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.new_link) {
-                    const row = this.closest('tr');
-                    const linkInput = row.querySelector('input[type="text"]');
-                    linkInput.value = `${window.location.origin}/shared-agent/${data.new_link}`;
-                    alert('New link generated successfully!');
-                } else {
-                    alert('Failed to generate new link.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while regenerating the link.');
-            });
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Link copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy link: ', err);
+            alert('Failed to copy link. Please try again.');
         });
-    });
+    }
 
     function getCookie(name) {
         const value = `; ${document.cookie}`;

@@ -1,158 +1,107 @@
-/* app/static/css/create_agent.css */
-
-:root {
-    --ntu-midnight-blue: #191970;
-    --ntu-crimson-red: #8A0303;
-    --background-color: #f0f2f5;
-    --text-color: #333;
-    --card-background: #fff;
-    --font-family: 'Poppins', sans-serif;
-}
-
 body {
-    font-family: var(--font-family);
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: #f0f2f5;
+    font-family: 'Poppins', sans-serif;
 }
 
 .container {
     max-width: 800px;
-    margin: 0 auto;
+    margin: 30px auto;
     padding: 20px;
 }
 
-h2 {
-    color: var(--ntu-midnight-blue);
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: 600;
-}
-
-.create-agent-form {
-    background-color: var(--card-background);
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
     padding: 30px;
 }
 
-.form-group {
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--ntu-midnight-blue);
+h2 {
+    color: #191970;
+    text-align: center;
+    margin-bottom: 30px;
     font-weight: 600;
+    font-size: 2.5em;
 }
 
-.form-control {
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #191970;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-control, .form-select {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-family: var(--font-family);
-    font-size: 16px;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1em;
 }
 
-.form-control:focus {
-    border-color: var(--ntu-midnight-blue);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(25, 25, 112, 0.2);
+.form-control:focus, .form-select:focus {
+    border-color: #191970;
+    box-shadow: 0 0 0 0.2rem rgba(25,25,112,0.25);
 }
 
 textarea.form-control {
     min-height: 100px;
 }
 
-.form-check {
+.btn-primary {
+    background-color: #8A0303;
+    border-color: #191970;
+    width: 100%;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-top: 20px;
+}
+
+.btn-primary:hover {
+    background-color: #b40000;
+    border-color: #0f0f4b;
+}
+
+.form-range {
+    width: 100%;
     margin-top: 10px;
 }
 
-.form-check-input {
-    margin-right: 10px;
-}
-
-.form-check-label {
-    color: var(--text-color);
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-family: var(--font-family);
-    font-weight: 600;
-    transition: background-color 0.3s ease;
-}
-
-.btn-primary {
-    background-color: var(--ntu-midnight-blue);
-    color: white;
-}
-
-.btn-secondary {
-    background-color: var(--ntu-crimson-red);
-    color: white;
-}
-
-.btn:hover {
-    opacity: 0.9;
+.d-flex {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #6c757d;
 }
 
 .form-text {
+    color: #6c757d;
     font-size: 0.9em;
-    color: #666;
     margin-top: 5px;
 }
 
-/* Styling for the temperature range input */
-input[type="range"] {
-    width: 100%;
-    margin-top: 10px;
-    -webkit-appearance: none;
-    background: transparent;
+/* Custom slider styling */
+.form-range::-webkit-slider-thumb {
+    background: #191970;
+}
+.form-range::-moz-range-thumb {
+    background: #191970;
+}
+.form-range::-ms-thumb {
+    background: #191970;
 }
 
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: var(--ntu-midnight-blue);
-    cursor: pointer;
-    margin-top: -5px;
-}
-
-input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    background: #ddd;
-    border-radius: 3px;
-}
-
-.range-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-}
-
-.range-labels span {
-    font-size: 0.8em;
-    color: #666;
-}
-
-.mt-3 {
-    margin-top: 15px;
-}
-
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
     }
-    
-    .create-agent-form {
+    .card {
         padding: 20px;
     }
 }

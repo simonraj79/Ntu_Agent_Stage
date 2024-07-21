@@ -1,99 +1,72 @@
-<!-- app/templates/edit_agent.html -->
 {% extends "base.html" %}
-
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/create_agent.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/edit_agent.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
 {% endblock %}
-
 {% block content %}
 <div class="container">
-    <h2>Edit Agent: {{ agent.name }}</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.name.label }}
-            {{ form.name(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.description.label }}
-            {{ form.description(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.system_prompt.label }}
-            {{ form.system_prompt(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.category_id.label }}
-            {{ form.category_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.access_level.label }}
-            {{ form.access_level(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.temperature.label }}
-            {{ form.temperature(class="form-control") }}
-            <small class="form-text text-muted">{{ form.temperature.description }}</small>
-        </div>
-        <div class="form-check">
-            {{ form.generate_sharing_link(class="form-check-input") }}
-            {{ form.generate_sharing_link.label(class="form-check-label") }}
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Update Agent</button>
-    </form>
-
-    {% if agent.sharing_link %}
-    <div class="share-link mt-4">
-        <h3>Share Link</h3>
-        <div class="input-group">
-            <input type="text" class="form-control" id="shareLink" value="{{ url_for('agents.access_shared_agent', token=agent.sharing_link, _external=True) }}" readonly>
-            <div class="input-group-append">
-                <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">Copy</button>
+    <div class="card">
+        <h2>Edit Agent: {{ agent.name }}</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control", required=true, data_tippy_content="Enter a unique name for your agent") }}
+                <small class="form-text text-muted">Choose a distinctive name for your agent.</small>
             </div>
+            <div class="form-group">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=3, required=true, data_tippy_content="Provide a brief description of what this agent does") }}
+                <small class="form-text text-muted">Briefly describe the agent's purpose and capabilities.</small>
+            </div>
+            <div class="form-group">
+                {{ form.system_prompt.label(class="form-label") }}
+                {{ form.system_prompt(class="form-control", rows=5, required=true, data_tippy_content="Enter initial instructions for the AI on how to behave and respond") }}
+                <small class="form-text text-muted">Provide detailed instructions for the agent's behavior and knowledge base.</small>
+            </div>
+            <div class="form-group">
+                {{ form.category_id.label(class="form-label") }}
+                {{ form.category_id(class="form-select", required=true, data_tippy_content="Select a category that best describes this agent's purpose") }}
+                <small class="form-text text-muted">Choose the most relevant category for your agent.</small>
+            </div>
+            <div class="form-group">
+                {{ form.access_level.label(class="form-label") }}
+                {{ form.access_level(class="form-select", required=true, data_tippy_content="Choose who can access this agent") }}
+                <small class="form-text text-muted">Determine who can interact with this agent.</small>
+            </div>
+            <div class="form-group">
+                <label for="temperature" class="form-label">Temperature (Creativity): <span id="temperatureValue">{{ form.temperature.data }}</span></label>
+                {{ form.temperature(class="form-range", type="range", min="0", max="1", step="0.1", data_tippy_content="Adjust the creativity level of the agent") }}
+                <div class="d-flex justify-content-between">
+                    <span>Focused</span>
+                    <span>Balanced</span>
+                    <span>Creative</span>
+                </div>
+                <small class="form-text text-muted">Adjust the agent's balance between focused and creative responses.</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update Agent</button>
+                <a href="{{ url_for('agents.agent_directory') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+
+        {% if agent.access_level == AccessLevel.SECRET_LINK and agent.secret_link %}
+        <div class="share-link mt-4">
+            <h3>Secret Link</h3>
+            <div class="input-group">
+                <input type="text" class="form-control" value="{{ url_for('agents.access_secret_agent', token=agent.secret_link, _external=True) }}" readonly>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary copy-link" type="button">Copy</button>
+                </div>
+            </div>
+            <button class="btn btn-secondary mt-2 regenerate-link" data-agent-id="{{ agent.id }}">Regenerate Link</button>
         </div>
-        <button class="btn btn-secondary mt-2" onclick="regenerateShareLink()">Regenerate Link</button>
+        {% endif %}
     </div>
-    {% endif %}
-
-    <form method="POST" action="{{ url_for('agents.delete_agent', agent_id=agent.id) }}" class="delete-agent-form mt-4">
-        {{ delete_form.hidden_tag() }}
-        {{ delete_form.submit(class="btn btn-danger", onclick="return confirm('Are you sure you want to delete this agent?')") }}
-    </form>
 </div>
-
-<script>
-function copyShareLink() {
-    var copyText = document.getElementById("shareLink");
-    copyText.select();
-    copyText.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    alert("Share link copied to clipboard!");
-}
-
-function regenerateShareLink() {
-    if (confirm('Are you sure you want to regenerate the sharing link? The old link will no longer work.')) {
-        fetch('{{ url_for("agents.regenerate_link", agent_id=agent.id) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.new_link) {
-                document.getElementById("shareLink").value = '{{ url_for("agents.access_shared_agent", token="", _external=True) }}' + data.new_link;
-                alert('New link generated successfully!');
-            } else {
-                alert('Failed to generate new link.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while regenerating the link.');
-        });
-    }
-}
-</script>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script src="{{ url_for('static', filename='js/edit_agent.js') }}"></script>
 {% endblock %}

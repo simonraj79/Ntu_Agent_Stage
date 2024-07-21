@@ -1,5 +1,5 @@
 # app/routes/agents.py
-from flask import Blueprint, render_template, request, jsonify, stream_with_context, Response, url_for, flash, redirect
+from flask import Blueprint, render_template, request, jsonify, stream_with_context, Response, url_for, flash, redirect, current_app
 from flask_login import login_required, current_user
 from app.models import Agent, ChatLog, AgentCategory, AgentCollaborators, User, Conversation, ConversationInsights
 from app import db
@@ -11,8 +11,7 @@ from datetime import datetime, timedelta
 from app.forms import AgentForm, DeleteAgentForm
 from app.models.agent import AccessLevel
 from urllib.parse import urlencode
-from app.models.agent import AccessLevel
-from app.utils.token_generator import generate_share_token, create_share_url
+
 
 
 
@@ -38,22 +37,36 @@ def agent_reports():
 def create_agent():
     form = AgentForm()
     if form.validate_on_submit():
-        agent = Agent(
-            name=form.name.data,
-            description=form.description.data,
-            system_prompt=form.system_prompt.data,
-            creator_id=current_user.id,
-            category_id=form.category_id.data,
-            access_level=AccessLevel[form.access_level.data],
-            temperature=form.temperature.data
-        )
-        if form.generate_sharing_link.data:
-            agent.generate_sharing_link()
-        db.session.add(agent)
-        db.session.commit()
-        flash('Agent created successfully!', 'success')
-        return redirect(url_for('agents.agent_directory'))
-    return render_template('create_agent.html', form=form)
+        try:
+            agent = Agent(
+                name=form.name.data,
+                description=form.description.data,
+                system_prompt=form.system_prompt.data,
+                creator_id=current_user.id,
+                category_id=form.category_id.data,
+                access_level=AccessLevel[form.access_level.data],
+                temperature=form.temperature.data
+            )
+            if agent.access_level == AccessLevel.SECRET_LINK:
+                agent.generate_secret_link()
+            db.session.add(agent)
+            db.session.commit()
+            flash('Agent created successfully!', 'success')
+            return redirect(url_for('agents.agent_directory'))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error creating agent: {str(e)}")
+            flash(f'Error creating agent: {str(e)}', 'error')
+    return render_template('create_agent.html', form=form, title="Create New Agent")
+
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
+from flask_login import login_required, current_user
+from app.models import Agent, AgentCategory
+from app import db
+from app.forms import AgentForm, DeleteAgentForm
+from app.models.agent import AccessLevel  # Make sure to import AccessLevel
+
+# ... other imports and route definitions ...
 
 @bp.route('/edit-agent/<int:agent_id>', methods=['GET', 'POST'])
 @login_required
@@ -66,21 +79,23 @@ def edit_agent(agent_id):
     form = AgentForm(obj=agent)
     form.category_id.choices = [(c.id, c.name) for c in AgentCategory.query.all()]
     
-    # Create an instance of DeleteAgentForm
-    delete_form = DeleteAgentForm()
-    
     if form.validate_on_submit():
         form.populate_obj(agent)
         agent.access_level = AccessLevel[form.access_level.data]
-        if form.generate_sharing_link.data and not agent.sharing_link:
-            agent.generate_sharing_link()
-        elif not form.generate_sharing_link.data:
-            agent.sharing_link = None
-        db.session.commit()
-        flash('Agent updated successfully.', 'success')
-        return redirect(url_for('agents.agent_details', agent_id=agent.id))
+        if agent.access_level == AccessLevel.SECRET_LINK and not agent.secret_link:
+            agent.generate_secret_link()
+        elif agent.access_level != AccessLevel.SECRET_LINK:
+            agent.secret_link = None
+        try:
+            db.session.commit()
+            flash('Agent updated successfully.', 'success')
+            return redirect(url_for('agents.agent_directory'))  # Redirect to agent directory instead
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating agent: {str(e)}")
+            flash(f'Error updating agent: {str(e)}', 'error')
     
-    return render_template('edit_agent.html', form=form, agent=agent, delete_form=delete_form)
+    return render_template('edit_agent.html', form=form, agent=agent, AccessLevel=AccessLevel)
 
 @bp.route('/regenerate-link/<int:agent_id>', methods=['POST'])
 @login_required
@@ -88,8 +103,68 @@ def regenerate_link(agent_id):
     agent = Agent.query.get_or_404(agent_id)
     if agent.creator_id != current_user.id:
         return jsonify({'error': 'Permission denied'}), 403
-    agent.regenerate_sharing_link()
-    return jsonify({'new_link': agent.sharing_link})
+    agent.regenerate_secret_link()
+    return jsonify({'new_link': agent.secret_link})
+
+@bp.route('/secret-agent/<string:token>')
+@login_required
+def access_secret_agent(token):
+    agent = Agent.query.filter_by(secret_link=token).first_or_404()
+    return redirect(url_for('agents.chat', agent_id=agent.id))
+
+def can_access_agent(agent, user):
+    if agent.access_level == AccessLevel.PUBLIC:
+        return True
+    if agent.access_level == AccessLevel.PRIVATE:
+        return agent.creator_id == user.id
+    if agent.access_level == AccessLevel.SECRET_LINK:
+        return True  # The access is controlled by the secret link itself
+    return False
+
+@bp.route('/get-secret-link/<int:agent_id>')
+@login_required
+def get_secret_link(agent_id):
+    agent = Agent.query.get_or_404(agent_id)
+    if agent.creator_id != current_user.id:
+        return jsonify({'error': 'Permission denied'}), 403
+    if agent.access_level != AccessLevel.SECRET_LINK:
+        return jsonify({'error': 'This agent does not have a secret link'}), 400
+    if not agent.secret_link:
+        agent.generate_secret_link()
+        db.session.commit()
+    return jsonify({'secret_link': url_for('agents.access_secret_agent', token=agent.secret_link, _external=True)})
+
+def can_access_agent(agent, user):
+    if agent.access_level == AccessLevel.PUBLIC:
+        return True
+    if agent.access_level == AccessLevel.PRIVATE:
+        return agent.creator_id == user.id
+    if agent.access_level == AccessLevel.SECRET_LINK:
+        return True  # The access is controlled by the secret link itself
+    return False
+
+@bp.route('/agent-directory')
+@login_required
+def agent_directory():
+    page = request.args.get('page', 1, type=int)
+    
+    user_agents = Agent.query.filter(
+        or_(Agent.creator_id == current_user.id, 
+            Agent.collaborators.any(user_id=current_user.id))
+    ).order_by(Agent.created_at.desc()).paginate(page=page, per_page=12)
+    
+    other_agents = Agent.query.filter(
+        Agent.creator_id != current_user.id,
+        Agent.access_level == AccessLevel.PUBLIC
+    ).order_by(Agent.created_at.desc()).limit(5).all()
+    
+    categories = AgentCategory.query.all()
+    
+    return render_template('agent_directory.html', 
+                           user_agents=user_agents, 
+                           other_agents=other_agents, 
+                           categories=categories,
+                           AccessLevel=AccessLevel)
 
 @bp.route('/shared-agent/<string:token>')
 @login_required
@@ -104,7 +179,8 @@ def agent_details(agent_id):
     if agent.creator_id != current_user.id and agent.access_level != AccessLevel.PUBLIC:
         flash('You do not have permission to view this agent.', 'error')
         return redirect(url_for('agents.agent_directory'))
-    return render_template('agent_details.html', agent=agent)
+    # For now, we'll just redirect to the edit page
+    return redirect(url_for('agents.edit_agent', agent_id=agent.id))
 
 @bp.route('/chat/<int:agent_id>', methods=['GET', 'POST'])
 @login_required
@@ -186,7 +262,7 @@ def generate_response(agent, conversation, user_message, chat_log):
         print(f"OpenAI API Key: {mask_api_key(Config.OPENAI_API_KEY)}")
         print("Sending request to OpenAI API...")
         stream = client.chat.completions.create(
-            model="GPT-4o-mini",
+            model="gpt-4o-mini",
             messages=messages,
             stream=True,
         )
@@ -266,34 +342,6 @@ def conversation_history():
                            next_url=next_url)
 
 
-@bp.route('/agent-directory')
-@login_required
-def agent_directory():
-    page = request.args.get('page', 1, type=int)
-    
-    # Query for user's agents with pagination
-    user_agents = Agent.query.filter(
-        or_(Agent.creator_id == current_user.id, 
-            Agent.collaborators.any(user_id=current_user.id))
-    ).order_by(Agent.created_at.desc()).paginate(page=page, per_page=12)
-    
-    # Query for other public agents, limited to 5
-    other_agents = Agent.query.filter(
-        Agent.creator_id != current_user.id,
-        Agent.access_level == AccessLevel.PUBLIC
-    ).order_by(Agent.created_at.desc()).limit(5).all()
-    
-    # Query for categories
-    categories = AgentCategory.query.all()
-    
-    return render_template('agent_directory.html', 
-                           user_agents=user_agents, 
-                           other_agents=other_agents, 
-                           categories=categories,
-                           AccessLevel=AccessLevel)
-
-
-
 @bp.route('/delete-agent/<int:agent_id>', methods=['POST'])
 @login_required
 def delete_agent(agent_id):
@@ -324,7 +372,7 @@ def generate_insights(conversation_id):
 
     try:
         response = client.chat.completions.create(
-            model="GPT-4o-mini",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "Analyze the following conversation and provide insights. Your response should be in this exact format:\nTopics: topic1, topic2, topic3\nSentiment: [a number between -1 and 1]\nSummary: A brief summary of the conversation."},
                 {"role": "user", "content": full_conversation}

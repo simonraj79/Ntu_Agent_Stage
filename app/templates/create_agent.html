@@ -1,80 +1,56 @@
-<!-- app/templates/create_agent.html -->
 {% extends "base.html" %}
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-<style>
-    .tooltip-inner {
-        max-width: 300px;
-        text-align: left;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/create_agent.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
 {% endblock %}
-
 {% block content %}
 <div class="container">
-    <h2>Create New Agent</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        
-        <div class="mb-3">
-            {{ form.name.label(class="form-label") }}
-            {{ form.name(class="form-control", data_bs_toggle="tooltip", title="Enter a unique name for your agent.") }}
-        </div>
-        
-        <div class="mb-3">
-            {{ form.description.label(class="form-label") }}
-            {{ form.description(class="form-control", data_bs_toggle="tooltip", title="Provide a brief description of what this agent does.") }}
-        </div>
-        
-        <div class="mb-3">
-            {{ form.system_prompt.label(class="form-label") }}
-            {{ form.system_prompt(class="form-control", data_bs_toggle="tooltip", title="Enter instructions for the AI on how to behave and respond. This sets the agent's personality and knowledge base.") }}
-        </div>
-        
-        <div class="mb-3">
-            {{ form.category_id.label(class="form-label") }}
-            {{ form.category_id(class="form-select", data_bs_toggle="tooltip", title="Select a category that best describes this agent's purpose.") }}
-        </div>
-        
-        <div class="mb-3">
-            {{ form.access_level.label(class="form-label") }}
-            {{ form.access_level(class="form-select", data_bs_toggle="tooltip", title="Public: Accessible to all users. Private: Only accessible to you. Faculty: Accessible to all faculty members.") }}
-        </div>
-        
-        <div class="mb-3">
-            <label for="temperature" class="form-label">Temperature (Creativity)</label>
-            <input type="range" class="form-range" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.5">
-            <div class="d-flex justify-content-between">
-                <span>Focused</span>
-                <span>Balanced</span>
-                <span>Creative</span>
+    <div class="card">
+        <h2>Create New Agent</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control", required=true, data_tippy_content="Enter a unique name for your agent") }}
+                <small class="form-text text-muted">Choose a distinctive name for your agent.</small>
             </div>
-            <small class="form-text text-muted">Adjust the slider to control the agent's creativity level.</small>
-        </div>
-        
-        <div class="mb-3 form-check">
-            {{ form.generate_sharing_link(class="form-check-input") }}
-            {{ form.generate_sharing_link.label(class="form-check-label") }}
-            <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Enable this to create a shareable link for this agent."></i>
-        </div>
-        
-        {{ form.submit(class="btn btn-primary") }}
-    </form>
+            <div class="form-group">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=3, required=true, data_tippy_content="Provide a brief description of what this agent does") }}
+                <small class="form-text text-muted">Briefly describe the agent's purpose and capabilities.</small>
+            </div>
+            <div class="form-group">
+                {{ form.system_prompt.label(class="form-label") }}
+                {{ form.system_prompt(class="form-control", rows=5, required=true, data_tippy_content="Enter initial instructions for the AI on how to behave and respond") }}
+                <small class="form-text text-muted">Provide detailed instructions for the agent's behavior and knowledge base.</small>
+            </div>
+            <div class="form-group">
+                {{ form.category_id.label(class="form-label") }}
+                {{ form.category_id(class="form-select", required=true, data_tippy_content="Select a category that best describes this agent's purpose") }}
+                <small class="form-text text-muted">Choose the most relevant category for your agent.</small>
+            </div>
+            <div class="form-group">
+                {{ form.access_level.label(class="form-label") }}
+                {{ form.access_level(class="form-select", required=true, data_tippy_content="Choose who can access this agent") }}
+                <small class="form-text text-muted">Determine who can interact with this agent.</small>
+            </div>
+            <div class="form-group">
+                <label for="temperature" class="form-label">Temperature (Creativity): <span id="temperatureValue">0.5</span></label>
+                {{ form.temperature(class="form-range", type="range", min="0", max="1", step="0.1", value="0.5", data_tippy_content="Adjust the creativity level of the agent") }}
+                <div class="d-flex justify-content-between">
+                    <span>Focused</span>
+                    <span>Balanced</span>
+                    <span>Creative</span>
+                </div>
+                <small class="form-text text-muted">Adjust the agent's balance between focused and creative responses.</small>
+            </div>
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+        </form>
+    </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-
-    var temperatureSlider = document.getElementById('temperature');
-    var temperatureValue = document.getElementById('temperature-value');
-    temperatureSlider.addEventListener('input', function() {
-        temperatureValue.textContent = this.value;
-    });
-});
-</script>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script src="{{ url_for('static', filename='js/create_agent.js') }}"></script>
 {% endblock %}

@@ -3,11 +3,12 @@ from enum import Enum
 from app.db import db
 from datetime import datetime
 import secrets
+from flask import current_app
 
 class AccessLevel(Enum):
-    PUBLIC = 'public'
-    PRIVATE = 'private'
-    FACULTY = 'faculty'
+    PUBLIC = 'Public'
+    SECRET_LINK = 'Secret Link'
+    PRIVATE = 'Private'
 
 class AgentCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,21 +27,23 @@ class Agent(db.Model):
     access_level = db.Column(db.Enum(AccessLevel), default=AccessLevel.PRIVATE)
     temperature = db.Column(db.Float, default=0.5)
     use_count = db.Column(db.Integer, default=0)
-    sharing_link = db.Column(db.String(64), unique=True)
+    secret_link = db.Column(db.String(128), unique=True)
     
     category = db.relationship('AgentCategory', backref='agents')
     collaborators = db.relationship('AgentCollaborators', back_populates='agent', cascade='all, delete-orphan')
     conversations = db.relationship('Conversation', backref='agent', lazy='dynamic')
 
-    def generate_sharing_link(self):
-        self.sharing_link = secrets.token_urlsafe(32)
+    def generate_secret_link(self):
+        token = secrets.token_urlsafe(16)
+        base_url = current_app.config['BASE_URL']
+        self.secret_link = f"{base_url}/secret-agent/{token}"
 
-    def regenerate_sharing_link(self):
-        self.generate_sharing_link()
+    def regenerate_secret_link(self):
+        self.generate_secret_link()
         db.session.commit()
 
-    def disable_sharing_link(self):
-        self.sharing_link = None
+    def disable_secret_link(self):
+        self.secret_link = None
         db.session.commit()
 
 class AgentCollaborators(db.Model):
